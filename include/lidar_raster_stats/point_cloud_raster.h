@@ -1,6 +1,6 @@
 
-#ifndef POINT_CLOUD_RASTERIZER_
-#define POINT_CLOUD_RASTERIZER_
+#ifndef POINT_CLOUD_RASTER_
+#define POINT_CLOUD_RASTER_
 
 #include <pcl/point_types.h>
 //#include <opencv2/core/core.hpp>
@@ -11,7 +11,7 @@
 #include <gdal/gdal_priv.h>
 #include <limits>
 
-#include <pcl/kdtree/kdtree_flann.h>
+//#include <pcl/search/kdtree.h>
 
 template <typename PointType>
 class PointCloudRaster
@@ -19,8 +19,8 @@ class PointCloudRaster
 public:
     typedef typename pcl::PointCloud<PointType> PC;
     typedef typename pcl::PointCloud<PointType>::Ptr PCP;
-    typedef typename pcl::KdTreeFLANN<PointType> KD;
-    typedef typename pcl::KdTreeFLANN<PointType>::Ptr KDP;
+    //typedef typename pcl::search::KdTree<PointType> KD;
+    //typedef typename pcl::search::KdTree<PointType>::Ptr KDP;
 
     // Take an input PCL PointCloud Ptr, output a 2D raster matrix containing a list of all the points in each cell
     PointCloudRaster(PCP cloud, float pixel_width, float pixel_height, Eigen::Vector2f origin=Eigen::Vector2f::Zero(), bool debugging=false);
@@ -42,7 +42,7 @@ public:
 
 private:
     PCP cloud_;
-    KDP tree_;
+    //KDP tree_;
 
     // 2D output raster containing list of point cloud indices within each pixel
     std::vector<std::vector<std::vector<int> > > index_raster_;
@@ -52,10 +52,10 @@ private:
     float pixel_width_; 
     float pixel_height_;
     Eigen::Vector2f origin_;
-    float height;
-    float width;
+    float height_;
+    float width_;
 
     float getFieldValue(PointType point, std::string field_name);
 };
 
-#endif //POINT_CLOUD_RASTERIZER_
+#endif //POINT_CLOUD_RASTER_

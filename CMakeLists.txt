@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 
 project(lidar_raster_stats)
-include_directories(include "/usr/include")
+#include_directories(include "/usr/include")
 
 # Point Cloud Library (PCL)
 find_package(PCL 1.09 REQUIRED COMPONENTS)
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(include ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 

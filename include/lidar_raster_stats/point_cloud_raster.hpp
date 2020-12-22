@@ -30,7 +30,10 @@ PointCloudRaster<PointType>::PointCloudRaster(PCP cloud, float pixel_width, floa
 {
     // Create an internal copy of point cloud 
     //   (a bit expensive, but not too bad compared to other operations in the class, and safer than not doing so)
+    cloud_.reset(new PC());
     *cloud_ = *cloud;
+    // Similarly, initialize KD Tree pointer
+    //tree_.reset(new KD());
     // Figure out minimum and maximum coordinates within cloud
     Eigen::Vector2f min_point, max_point;  // 2D float pairs in (X,Y)
     min_point << 1e20, 1e20;
@@ -54,15 +57,15 @@ PointCloudRaster<PointType>::PointCloudRaster(PCP cloud, float pixel_width, floa
 
     // Using minimum and maximum coordinates and pixel size, figure out raster origin and size
     // *** To meet with image processing conventions, we'll keep the the image Y axis increasing DOWNWARDS, and the X axis increasing RIGHT ***
-    origin_[0] = std::floor((min_point[0] - origin[0])/pixel_width) * pixel_width + origin[0];
-    origin_[1] = std::ceil((max_point[1] - origin[1])/pixel_height) * pixel_height + origin[1];
     pixel_width_ = pixel_width;
-    pixel_height = pixel_height;
-    int width_ = int(std::ceil((max_point[0] - origin_[0])/pixel_width_))+1;
-    int height_ = int(std::ceil((origin_[1] - min_point[1])/pixel_height))+1;
+    pixel_height_ = pixel_height;
+    origin_[0] = std::floor((min_point[0] - origin[0])/pixel_width_) * pixel_width_ + origin[0];
+    origin_[1] = std::ceil((max_point[1] - origin[1])/pixel_height_) * pixel_height_ + origin[1];
+    width_ = int(std::ceil((max_point[0] - origin_[0])/pixel_width_))+1;
+    height_ = int(std::ceil((origin_[1] - min_point[1])/pixel_height_))+1;
     if(debugging)
     {
-        std::cout << "Raster size was " << width_ << " x " << height_ << ", with pixel size " << pixel_width_ << " x " << pixel_height << std::setprecision(8) << std::endl;
+        std::cout << "Raster size was " << width_ << " x " << height_ << ", with pixel size " << pixel_width_ << " x " << pixel_height_ << std::setprecision(8) << std::endl;
         std::cout << "Raster origin is at " << origin_[0] << " (x), " << origin_[1] << " (y)" << std::setprecision(8) << std::endl;
     }
     // Initialize output raster of indices using the width and height found above
@@ -74,7 +77,7 @@ PointCloudRaster<PointType>::PointCloudRaster(PCP cloud, float pixel_width, floa
         int x_index, y_index;
         // *** Again, X increases RIGHT (easting) and Y increases DOWN (-northing) ***
         x_index = int(std::floor((cloud_->points[i].x - origin_[0])/pixel_width_));
-        y_index = int(std::floor((origin_[1] - cloud_->points[i].y)/pixel_height));
+        y_index = int(std::floor((origin_[1] - cloud_->points[i].y)/pixel_height_));
         if(x_index > width_-1 || y_index > height_-1 || x_index < 0 || y_index < 0)
         {
             std::cout << "WARNING - index out of bounds for " << x_index << " " << y_index << " " << cloud_->points[i].x << " " << cloud_->points[i].y << " " << i << std::setprecision(8) << std::endl;
@@ -142,10 +145,11 @@ bool PointCloudRaster<PointType>::checkRasterInitialization(std::vector<std::vec
 template <typename PointType>
 void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
 {
-    std::cout << "Generating maximum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
+    raster_out.assign(height_, std::vector<float>(width_));
+    std::cout << "Generating minimum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
     {
-        std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
+        std::cout << "WARNING: Requested to generate minimum from empty raster; exiting.";
         return;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
@@ -171,9 +175,9 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std:
 template <typename PointType>
 void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
 {
-    raster_out.assign(height, std::vector<float>(width));
-    std::cout << "Generating minimum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
-    if(!checkRasterInitialization(index_raster_))
+    raster_out.assign(height_, std::vector<float>(width_));
+    std::cout << "Generating maximum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
+    if(!checkRasterInitialization())
     {
         std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
         return;
@@ -201,8 +205,9 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std:
 template <typename PointType>
 void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
 {
+    raster_out.assign(height_, std::vector<float>(width_));
     std::cout << "Generating median value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
-    if(!checkRasterInitialization(index_raster_))
+    if(!checkRasterInitialization())
     {
         std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
         return;
@@ -225,7 +230,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, s
             if(values.size() % 2 == 0) // if an odd number of values in pixel
                 raster_out[i][j] = values[median_index];
             else
-                raster_out[i][j] = (values[median_index] - values[median_index+1]) / 2;
+                raster_out[i][j] = (values[median_index+1] - values[median_index]) / 2;
             empty_cells[i][j] = false;
         }
     // To DO - hole filling, interpolation, etc. 
@@ -233,8 +238,9 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, s
 template <typename PointType>
 void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<float> >& raster_out)
 {
+    raster_out.assign(height_, std::vector<float>(width_));
     std::cout << "Generating point density raster for input cloud with size " << cloud_->points.size() << std::endl;
-    if(!checkRasterInitialization(index_raster_))
+    if(!checkRasterInitialization())
     {
         std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
         return;
@@ -290,7 +296,7 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
 
     // Set up transform
     //   Geographic transform (x_min, x_pixel_width, 0, y_min, 0, -y_pixel_width)
-    double adfGeoTransform[6] = { 6.2075e+06, 5, 0, 2.06e+06, 0, -5}; //
+    double adfGeoTransform[6] = { origin_[0], pixel_width_, 0, origin_[1], 0, -pixel_height_}; //
     poDstDS->SetGeoTransform( adfGeoTransform );
     //   Well-known Text for base coordinate system
 //    std::string fish = "PROJCS[\"NAD_1983_CORS96_StatePlane_California_VI_FIPS_0406_Ft_US\",GEOGCS[\"NAD83(CORS96)\",DATUM[\"NAD83_Continuously_Operating_Reference_Station_1996\",SPHEROID[\"GRS 1980\",6378137,298.257222101004,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"1133\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"6783\"]],PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"latitude_of_origin\",32.1666666666667],PARAMETER[\"central_meridian\",-116.25],PARAMETER[\"standard_parallel_1\",32.7833333333333],PARAMETER[\"standard_parallel_2\",33.8833333333333],PARAMETER[\"false_easting\",6561666.66666667],PARAMETER[\"false_northing\",1640416.66666667],UNIT[\"US survey foot\",0.304800609601219,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]";
