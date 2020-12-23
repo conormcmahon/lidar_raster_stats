@@ -15,6 +15,9 @@ From within cloned git repository:
 
 # Example Images
 
+<img src="images/62072057_3d.png" width="55%">
+Example image showing the input 3D point cloud for which raster are generated below.
+
 Currently, only four stats are included:
 
 <img src="images/raster_stats_max.png" width="40%">
