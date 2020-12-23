@@ -17,14 +17,15 @@ From within cloned git repository:
 
 Currently, only four stats are included:
 
-[Max Image](images/raster_stats_max.png)
+<img src="images/raster_stats_max.png" width="40%>
 Maximum within each raster pixel.
 
-[Min Image](images/raster_stats_min.png)
+<img src="images/raster_stats_min.png" width="40%">
 Minimum within each raster pixel.
 
-[Median Image](images/raster_stats_median.png)
+<img src="images/raster_stats_median.png" width="40%">
 Median within each raster pixel.
 
-[Density Image](images/raster_stats_density.png)
+<img src="images/raster_stats_density.png" width="40%">
 Total number of points (cloud density) within each raster pixel.
+
