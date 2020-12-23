@@ -17,7 +17,7 @@ From within cloned git repository:
 
 Currently, only four stats are included:
 
-<img src="images/raster_stats_max.png" width="40%>
+<img src="images/raster_stats_max.png" width="40%">
 Maximum within each raster pixel.
 
 <img src="images/raster_stats_min.png" width="40%">
