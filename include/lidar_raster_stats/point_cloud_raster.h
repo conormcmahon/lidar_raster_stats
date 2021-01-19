@@ -13,6 +13,19 @@
 
 //#include <pcl/search/kdtree.h>
 
+struct HistogramOptions
+{
+    int num_bins;
+    
+    // Options for how histogram range is determined
+    bool min_max_specified; // user specifies a global min and max value for the histogram range
+    bool scaled_by_pixel; // for each pixel, make the histogram run from the min to the max value available (save these values in first two bands)
+    // if neither of the above is true, generate a single histogram range based on the global cloud min/max
+
+    float min_value;
+    float max_value;
+};
+
 template <typename PointType>
 class PointCloudRaster
 {
@@ -36,9 +49,12 @@ public:
     void generateMinRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value=-9999);
     void generateMedianRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value=-9999);
     void generateDensityRaster(std::vector<std::vector<float> >& raster_out);
+    void generateVegHeightHistogram(std::string field_name, std::vector<std::vector<std::vector<float> > >& raster_out, HistogramOptions opt, float default_value=-9999);
 
     template <typename DataType> 
     void outputTIF(std::vector<std::vector<DataType> > image, std::string filename);
+    template <typename DataType> 
+    void outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename);
 
 private:
     PCP cloud_;

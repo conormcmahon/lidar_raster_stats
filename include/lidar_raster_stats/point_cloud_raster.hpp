@@ -145,6 +145,7 @@ bool PointCloudRaster<PointType>::checkRasterInitialization(std::vector<std::vec
 template <typename PointType>
 void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
 {
+    // Resize Output Image
     raster_out.assign(height_, std::vector<float>(width_));
     std::cout << "Generating minimum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
@@ -175,6 +176,7 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std:
 template <typename PointType>
 void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
 {
+    // Resize Output Image
     raster_out.assign(height_, std::vector<float>(width_));
     std::cout << "Generating maximum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
@@ -205,6 +207,7 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std:
 template <typename PointType>
 void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
 {
+    // Resize Output Image
     raster_out.assign(height_, std::vector<float>(width_));
     std::cout << "Generating median value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
@@ -212,7 +215,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, s
         std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
         return;
     }
-    // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
+    // Fill image with data
     std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
     for(std::size_t i=0; i<index_raster_.size(); i++)
         for(std::size_t j=0; j<index_raster_[i].size(); j++)
@@ -238,6 +241,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, s
 template <typename PointType>
 void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<float> >& raster_out)
 {
+    // Resize Output Image
     raster_out.assign(height_, std::vector<float>(width_));
     std::cout << "Generating point density raster for input cloud with size " << cloud_->points.size() << std::endl;
     if(!checkRasterInitialization())
@@ -245,7 +249,7 @@ void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<
         std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
         return;
     }
-    // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
+    // Fill image with data
     std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
     for(std::size_t i=0; i<index_raster_.size(); i++)
         for(std::size_t j=0; j<index_raster_[i].size(); j++)
@@ -255,6 +259,86 @@ void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<
         }
     // To DO - hole filling, interpolation, etc. 
 } 
+
+template <typename PointType>
+void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_name, std::vector<std::vector<std::vector<float> > >& raster_out, HistogramOptions opt, float default_value)
+{
+    // Resize Output Image
+    if(opt.scaled_by_pixel)
+        raster_out.assign(height_, std::vector<std::vector<float> >(width_, std::vector<float>(opt.num_bins+2, 0)));
+    else
+        raster_out.assign(height_, std::vector<std::vector<float> >(width_, std::vector<float>(opt.num_bins+2, 0)));
+    std::cout << "Generating histogram raster with " << opt.num_bins << " bins for input cloud with size " << cloud_->points.size() << std::endl;
+    if(opt.scaled_by_pixel && opt.min_max_specified)
+    {
+        std::cout << "  WARNING: The user specified a min/max value for histogram but also specified this should be scaled for each pixel. Pixelwise scaling will be used and specified global values discarded." << std::endl; 
+        opt.min_max_specified = false;
+    }
+    if(!checkRasterInitialization())
+    {
+        std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
+        return;
+    }
+    float cloud_minimum = 10e10;
+    float cloud_maximum = -10e10;
+    if(!(opt.scaled_by_pixel) && !(opt.min_max_specified))
+        for(int i=0; i<cloud_->points.size(); i++)
+        {
+            float value = getFieldValue(cloud_->points[i], field_name);
+            if(value < cloud_minimum)
+                cloud_minimum = value;
+            if(value > cloud_maximum)
+                cloud_maximum = value;
+        }
+    // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
+    std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
+    // Populate output raster with data
+    for(std::size_t i=0; i<index_raster_.size(); i++)
+        for(std::size_t j=0; j<index_raster_[i].size(); j++)
+        {
+            // Skip empty raster pixels
+            if(index_raster_[i][j].size() < 1)
+                continue;
+            // Build and sort list of values
+            std::vector<float> values;
+            for(std::size_t k=0; k<index_raster_[i][j].size(); k++)
+                values.push_back( getFieldValue(cloud_->points[index_raster_[i][j][k]], field_name) );
+            std::sort(values.begin(), values.end());
+            // Assign min and max values for this histogram, if they vary by pixel
+            if(opt.scaled_by_pixel)
+            {
+                // Cannot infer bin width if number of requested bins is greater than number of points
+                if(values.size() < opt.num_bins) 
+                    continue;
+                opt.min_value = values[0]; // min field value
+                opt.max_value = values[values.size()-1]; // max field value
+            }
+            raster_out[i][j][0] = opt.min_value;
+            raster_out[i][j][1] = opt.max_value;
+            for(std::size_t k=0; k<values.size(); k++)
+            {
+                int hist_pos;
+                if(values[k] < opt.min_value)
+                    hist_pos = 0;
+                else if(values[k] > opt.max_value)
+                    hist_pos = opt.num_bins - 1; 
+                else 
+                {
+                    float pos_temp = (values[k] - opt.min_value) / (opt.max_value - opt.min_value);
+                    hist_pos = int(floor(pos_temp * (opt.num_bins-1)));
+                }
+                hist_pos += 2; // because first two bands are the min/max values
+                raster_out[i][j][hist_pos]++;
+            }
+            for(std::size_t bin=0; bin<opt.num_bins; bin++)
+            {
+                raster_out[i][j][bin] /= values.size();
+            }
+            empty_cells[i][j] = false;  
+        }
+    // To DO - hole filling, interpolation, etc. 
+}
+
 
 template <typename PointType>
 template <typename DataType> 
@@ -322,6 +406,83 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
     poBand = poDstDS->GetRasterBand(1);
     poBand->RasterIO( GF_Write, 0, 0, height, width,
                     abyRaster, height, width, GDT_Float32, 0, 0 );
+    // Close and save file 
+    GDALClose( (GDALDatasetH) poDstDS ); 
+}
+
+
+
+template <typename PointType>
+template <typename DataType> 
+void PointCloudRaster<PointType>::outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename)
+{ 
+    std::cout << "Asked to save a file to " << filename << std::endl;
+
+    GDALAllRegister();
+
+    if(!checkRasterInitialization(image))
+    {
+        std::cout << "WARNING: asked to save a faulty image file to " << filename << ". Returning without saving.";
+        return;
+    }
+    // the following based on https://gdal.org/tutorials/raster_api_tut.html#getting-dataset-information
+
+    // Image dimensions
+    unsigned int height = image.size();
+    unsigned int width = image[0].size();
+    unsigned int num_bands = image[0][0].size();
+
+    // Create GDAL driver for file IO
+    const char *pszFormat = "GTiff";
+    GDALDriver *poDriver;
+    char **papszMetadata;
+    poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
+    if( poDriver == NULL )
+        exit( 1 );
+    papszMetadata = poDriver->GetMetadata();
+    if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATE, FALSE ) )
+        printf( "Driver %s supports Create() method.\n", pszFormat );
+    if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATECOPY, FALSE ) )
+        printf( "Driver %s supports CreateCopy() method.\n", pszFormat );
+
+    // Create image on disk
+    GDALDataset *poDstDS;
+    char **papszOptions = NULL;
+    poDstDS = poDriver->Create( filename.c_str(), image.size(), image[0].size(), num_bands, GDT_Float32,
+                                papszOptions );
+
+    // Set up transform
+    //   Geographic transform (x_min, x_pixel_width, 0, y_min, 0, -y_pixel_width)
+    double adfGeoTransform[6] = { origin_[0], pixel_width_, 0, origin_[1], 0, -pixel_height_}; //
+    poDstDS->SetGeoTransform( adfGeoTransform );
+    //   Well-known Text for base coordinate system
+//    std::string fish = "PROJCS[\"NAD_1983_CORS96_StatePlane_California_VI_FIPS_0406_Ft_US\",GEOGCS[\"NAD83(CORS96)\",DATUM[\"NAD83_Continuously_Operating_Reference_Station_1996\",SPHEROID[\"GRS 1980\",6378137,298.257222101004,AUTHORITY[\"EPSG\",\"7019\"]],AUTHORITY[\"EPSG\",\"1133\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"6783\"]],PROJECTION[\"Lambert_Conformal_Conic_2SP\"],PARAMETER[\"latitude_of_origin\",32.1666666666667],PARAMETER[\"central_meridian\",-116.25],PARAMETER[\"standard_parallel_1\",32.7833333333333],PARAMETER[\"standard_parallel_2\",33.8833333333333],PARAMETER[\"false_easting\",6561666.66666667],PARAMETER[\"false_northing\",1640416.66666667],UNIT[\"US survey foot\",0.304800609601219,AUTHORITY[\"EPSG\",\"9003\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]";
+    OGRSpatialReference oSRS;
+    char *pszSRS_WKT = NULL;
+//    oSRS.SetUTM( 11, TRUE );
+//    oSRS.SetWellKnownGeogCS( "NAD83" );
+    oSRS.importFromEPSG(2230);
+    oSRS.exportToWkt( &pszSRS_WKT );
+    poDstDS->SetProjection( pszSRS_WKT );
+    CPLFree( pszSRS_WKT );
+    // Output Raster Bands to Disk
+    for(int band=0; band<num_bands; band++)
+    {
+        // Fill image data structure in memory
+        float abyRaster[height*width]; 
+        unsigned int ind = 0;
+        for(unsigned int i=0; i<height; i++)
+            for(unsigned int j=0; j<height; j++)
+            {
+                abyRaster[ind] = image[j][i][band];
+                ind += 1;
+            }
+        // Populate image with data on disk
+        GDALRasterBand *poBand;
+        poBand = poDstDS->GetRasterBand(band+1);
+        poBand->RasterIO( GF_Write, 0, 0, height, width,
+                        abyRaster, height, width, GDT_Float32, 0, 0 );
+    }
     // Close and save file 
     GDALClose( (GDALDatasetH) poDstDS ); 
 }
