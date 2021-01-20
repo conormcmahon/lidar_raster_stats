@@ -34,3 +34,15 @@ Median within each raster pixel.
 <img src="images/raster_stats_density.png" width="40%">
 Total number of points (cloud density) within each raster pixel.
 
+<img src="images/height_histogram.png" width="40%">
+Histogram of point heights within image, aggregated at 5 ft pixel scale with 10 height bins. Red band is high vegetation, green is medium, and blue is near-ground returns. 
+
+At another area along a major river, the following height histograms were extracted for comparison between vegetation types. All of the following histograms are with pixels aggregated at 10 m resolution with 20 bins, ranging from 0 to 20 m height. 
+<img src="images/histogram_gallery_riparian.png" width="40%">
+Gallery riparian trees, probably sycamore or cottonwood. 
+
+<img src="images/histogram_willows.png" width="40%">
+Lower riparian trees, probably willow.
+
+<img src="images/histogram_chaparral.png" width="40%">
+Chaparral vegetation. 
