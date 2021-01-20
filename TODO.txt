@@ -1,0 +1,2 @@
+- Hole-filling and interpolation
+- Non-integer pixel-sizes
