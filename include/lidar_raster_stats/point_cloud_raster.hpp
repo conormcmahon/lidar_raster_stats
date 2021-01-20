@@ -263,33 +263,38 @@ void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<
 template <typename PointType>
 void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_name, std::vector<std::vector<std::vector<float> > >& raster_out, HistogramOptions opt, float default_value)
 {
-    // Resize Output Image
-    if(opt.scaled_by_pixel)
-        raster_out.assign(height_, std::vector<std::vector<float> >(width_, std::vector<float>(opt.num_bins+2, 0)));
-    else
-        raster_out.assign(height_, std::vector<std::vector<float> >(width_, std::vector<float>(opt.num_bins+2, 0)));
     std::cout << "Generating histogram raster with " << opt.num_bins << " bins for input cloud with size " << cloud_->points.size() << std::endl;
+    if(!checkRasterInitialization())
+    {
+        std::cout << "  WARNING: Requested to generate maximum from empty raster; exiting without building raster.";
+        return;
+    }
+    // Resize Output Image
+    raster_out.assign(height_, std::vector<std::vector<float> >(width_, std::vector<float>(opt.num_bins+2, 0)));
+    // Debugging based on options
+    if(opt.scaled_by_pixel)
+        std::cout << "  Histogram will be generated with different minima/maxima bounds for each pixel, depending on the local distribution of values." << std::endl;
+    else if(opt.min_max_specified)
+        std::cout << "  Histogram will be generated with a single fixed minimum and maximum across all pixels. Min: " << opt.min_value << ";  Max: " << opt.max_value << std::endl;
     if(opt.scaled_by_pixel && opt.min_max_specified)
     {
         std::cout << "  WARNING: The user specified a min/max value for histogram but also specified this should be scaled for each pixel. Pixelwise scaling will be used and specified global values discarded." << std::endl; 
         opt.min_max_specified = false;
     }
-    if(!checkRasterInitialization())
-    {
-        std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
-        return;
-    }
-    float cloud_minimum = 10e10;
-    float cloud_maximum = -10e10;
     if(!(opt.scaled_by_pixel) && !(opt.min_max_specified))
+    {
+        opt.min_value = 10e10;
+        opt.max_value = -10e10;
         for(int i=0; i<cloud_->points.size(); i++)
         {
             float value = getFieldValue(cloud_->points[i], field_name);
-            if(value < cloud_minimum)
-                cloud_minimum = value;
-            if(value > cloud_maximum)
-                cloud_maximum = value;
+            if(value < opt.min_value)
+                opt.min_value = value;
+            if(value > opt.max_value)
+                opt.max_value = value;
         }
+        std::cout << "  Histogram will be generated with a single fixed minimum and maximum across all pixels. Min: " << opt.min_value << ";  Max: " << opt.max_value << std::endl;
+    }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
     std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
     // Populate output raster with data
@@ -330,7 +335,7 @@ void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_n
                 hist_pos += 2; // because first two bands are the min/max values
                 raster_out[i][j][hist_pos]++;
             }
-            for(std::size_t bin=0; bin<opt.num_bins; bin++)
+            for(std::size_t bin=2; bin<opt.num_bins; bin++)
             {
                 raster_out[i][j][bin] /= values.size();
             }
@@ -367,11 +372,11 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
     if( poDriver == NULL )
         exit( 1 );
     papszMetadata = poDriver->GetMetadata();
-    if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATE, FALSE ) )
-        printf( "Driver %s supports Create() method.\n", pszFormat );
-    if( CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATECOPY, FALSE ) )
-        printf( "Driver %s supports CreateCopy() method.\n", pszFormat );
-
+    if( !CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATE, FALSE ) )
+    {
+        std::cout << "  Driver " << " does not support Create() method. Returning without saving output cloud.";
+        return;
+    }
     // Create image on disk
     GDALDataset *poDstDS;
     char **papszOptions = NULL;

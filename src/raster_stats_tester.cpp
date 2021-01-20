@@ -29,9 +29,9 @@ int main(int argc, char *argv[])
     std::vector<std::vector<float> > density_raster;
     std::vector<std::vector<std::vector<float> > > histogram_raster;
     // Generate Rasters
-    rasterizer.generateMaxRaster    (field_name, max_raster, -9999);
-    rasterizer.generateMinRaster    (field_name, min_raster, -9999);
-    rasterizer.generateMedianRaster (field_name, median_raster, -9999);
+    rasterizer.generateMaxRaster     (field_name, max_raster, -9999);
+    rasterizer.generateMinRaster     (field_name, min_raster, -9999);
+    rasterizer.generateMedianRaster  (field_name, median_raster, -9999);
     rasterizer.generateDensityRaster (density_raster);
     // Populate Histogram Options and Generate Histogram Raster
     HistogramOptions hist_opts;
