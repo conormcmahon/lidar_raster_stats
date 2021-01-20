@@ -17,32 +17,45 @@ From within cloned git repository:
 
 # Example Images
 
+## Input Cloud
+
 <img src="images/62072057_3d.png" width="55%">
 Example image showing the input 3D point cloud for which raster are generated below. The cloud is colored by return intensity.
 
-Currently, only four stats are included, illustrated here using the intensity information above:
+Currently, only four stats are included, illustrated here using the intensity information above. Histograms can also be extracted which show the distribution of point values within each pixel. 
+
+## Maximum Image
 
 <img src="images/raster_stats_max.png" width="40%">
 Maximum within each raster pixel.
 
+## Minimum Image
+
 <img src="images/raster_stats_min.png" width="40%">
 Minimum within each raster pixel.
+
+## Median Image
 
 <img src="images/raster_stats_median.png" width="40%">
 Median within each raster pixel.
 
+## Point Density Image
+
 <img src="images/raster_stats_density.png" width="40%">
 Total number of points (cloud density) within each raster pixel.
+
+## Histogram Image
 
 <img src="images/height_histogram.png" width="40%">
 Histogram of point heights within image, aggregated at 5 ft pixel scale with 10 height bins. Red band is high vegetation, green is medium, and blue is near-ground returns. 
 
 At another area along a major river, the following height histograms were extracted for comparison between vegetation types. All of the following histograms are with pixels aggregated at 10 m resolution with 20 bins, ranging from 0 to 20 m height. 
-<img src="images/histogram_gallery_riparian.png" width="40%">
+
+<img src="images/histogram_gallery_riparian.png" width="70%">
 Gallery riparian trees, probably sycamore or cottonwood. 
 
-<img src="images/histogram_willows.png" width="40%">
+<img src="images/histogram_willows.png" width="70%">
 Lower riparian trees, probably willow.
 
-<img src="images/histogram_chaparral.png" width="40%">
+<img src="images/histogram_chaparral.png" width="70%">
 Chaparral vegetation. 
