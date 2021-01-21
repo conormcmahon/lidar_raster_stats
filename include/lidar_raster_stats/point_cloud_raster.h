@@ -9,6 +9,7 @@
 #include <pcl/io/pcd_io.h>
 
 #include <gdal/gdal_priv.h>
+#include <proj.h>
 #include <limits>
 
 //#include <pcl/search/kdtree.h>
@@ -36,13 +37,16 @@ public:
     //typedef typename pcl::search::KdTree<PointType>::Ptr KDP;
 
     // Take an input PCL PointCloud Ptr, output a 2D raster matrix containing a list of all the points in each cell
-    PointCloudRaster(PCP cloud, float pixel_width, float pixel_height, Eigen::Vector2f origin=Eigen::Vector2f::Zero(), bool debugging=false);
+    PointCloudRaster(PCP cloud, float pixel_width, float pixel_height, int EPSG, int EPSG_reproj=0, Eigen::Vector2f origin=Eigen::Vector2f::Zero(), bool debugging=false);
+    // Destructor (make sure to release all GDAL-associated memory)
+    ~PointCloudRaster();
     // Verify that a raster has actually been populated
     //   For a gridded set of points
     bool checkRasterInitialization();
     //   For a real raster 
     template <typename DataType>
     bool checkRasterInitialization(std::vector<std::vector<DataType> >& raster);
+    void setEPSG(int EPSG);
 
     // ***** Statistics *****
     void generateMaxRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value=-9999);
@@ -70,8 +74,10 @@ private:
     Eigen::Vector2f origin_;
     float height_;
     float width_;
+    int EPSG_;
 
     float getFieldValue(PointType point, std::string field_name);
+    void reprojectCloud(int EPSG_new);
 };
 
 #endif //POINT_CLOUD_RASTER_

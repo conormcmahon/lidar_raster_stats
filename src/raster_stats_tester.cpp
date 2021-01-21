@@ -3,6 +3,20 @@
 
 int main(int argc, char *argv[])
 {
+    if(argc != 9 && argc != 10)
+    {
+        std::cout << "ERROR: Didn't receive expected number of input parameters. Required parameters, in order:" << std::endl;
+        std::cout << "  INPUT_FILENAME  - string value containing entire path to input filename, including filetype (e.g. \"/home/foo/input_cloud.pcd\")" << std::endl;
+        std::cout << "  OUTPUT_FILENAME - string value containing entire path to output filename, but NOT including filetype (e.g. \"/home/foo/raster_out\")" << std::endl;
+        std::cout << "  FIELD_NAME      - name of field from point cloud to use for raster outputs (e.g. \"intensity\", \"height\", \"z\"...)" << std::endl;
+        std::cout << "  PIXEL_SIZE      - X/Y pixel dimensions for output raster, in output georeferenced units" << std::endl;
+        std::cout << "  HISTOGRAM_MIN   - minimum bin value for histogram raster. If this and max are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
+        std::cout << "  HISTOGRAM_MAX   - maximum bin value for histogram raster. If this and min are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
+        std::cout << "  HISTOGRAM_BINS  - number of bins to be used in histogram" << std::endl;
+        std::cout << "  EPSG_INPUT      - EPSG code with the CRS of the input point cloud dataset" << std::endl;
+        std::cout << "  EPSG_OUTPUT     - EPSG code that point cloud data will be reprojected to prior to rasterizing. If none is specified, no reprojection occurs." << std::endl;
+        return -1;
+    }
     std::string pcd_filename = argv[1];
     std::string output_tif_filename = argv[2];
     std::string field_name = argv[3];
@@ -10,6 +24,11 @@ int main(int argc, char *argv[])
     float hist_min = std::atof(argv[5]);
     float hist_max = std::atof(argv[6]);
     int hist_bins = std::atoi(argv[7]);
+    int EPSG = std::atoi(argv[8]);
+    // Check whether a reprojection is required
+    int EPSG_reproj = 0;
+    if(argc == 10)
+        EPSG_reproj = std::atoi(argv[9]);
 
     // Load input cloud
     pcl::PointCloud<pcl::PointVeg>::Ptr cloud(new pcl::PointCloud<pcl::PointVeg>);
@@ -21,8 +40,10 @@ int main(int argc, char *argv[])
     else 
     std::cout << "Read an input cloud with size " << cloud->points.size() << std::endl;
 
-    // Declare Raster Objects
-    PointCloudRaster<pcl::PointVeg> rasterizer(cloud, pixel_size, pixel_size, Eigen::Vector2f::Zero(), true);  
+    // Declare Raster Objects 
+
+        //GDALDestroy();
+    PointCloudRaster<pcl::PointVeg> rasterizer(cloud, pixel_size, pixel_size, EPSG, EPSG_reproj, Eigen::Vector2f::Zero(), true);  
     std::vector<std::vector<float> > max_raster;
     std::vector<std::vector<float> > min_raster;
     std::vector<std::vector<float> > median_raster;
@@ -54,7 +75,8 @@ int main(int argc, char *argv[])
     rasterizer.outputTIF(min_raster, output_tif_filename + std::string("_min.tif"));
     rasterizer.outputTIF(median_raster, output_tif_filename + std::string("_median.tif"));
     rasterizer.outputTIF(density_raster, output_tif_filename + std::string("_density.tif"));
-    rasterizer.outputTIFMultiband(histogram_raster, output_tif_filename + std::string("_histogram.tif"));
+    rasterizer.outputTIFMultiband(histogram_raster, output_tif_filename + std::string("_histogram.tif")); 
 
+    return 1;
 }
 

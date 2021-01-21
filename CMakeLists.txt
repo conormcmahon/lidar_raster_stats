@@ -27,12 +27,16 @@ endif()
 # GDAL
 find_package(GDAL REQUIRED)
 
+# PROJ 
+find_package(PROJ)
+include_directories(${PROJ_INCLUDE_DIRS})
+
 add_library(point_cloud_raster src/point_cloud_raster.cpp)
-target_link_libraries(point_cloud_raster ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES})
+target_link_libraries(point_cloud_raster ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PROJ_LIBRARIES})
 #target_include_directories(point_cloud_raster PUBLIC ../include)
 
 add_executable(raster_stats_tester src/raster_stats_tester.cpp)
-target_link_libraries(raster_stats_tester ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES})
+target_link_libraries(raster_stats_tester ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PROJ_LIBRARIES})
 
 
 # Install 
