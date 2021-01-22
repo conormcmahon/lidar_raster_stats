@@ -24,11 +24,6 @@ raster_stats_tester INPUT_FILENAME OUTPUT_FILENAME FIELD_NAME PIXEL_SIZE HISTOGR
   EPSG_OUTPUT     - EPSG code that point cloud data will be reprojected to prior to rasterizing. If none is specified, no reprojection occurs.
 ```
 
-- Input - Provided as full filepath to an input .pcd point cloud. The demo file used above expects 'PointVeg' type defined in [Dirt Or Leaf Library](https://github.com/conormcmahon/dirt_or_leaf). However, the library is templated so that arbitrary point types can be used in a user-written .cpp demo file. 
-- Output - Provide a filepath and name prefix for the output file, but do NOT include file type. All images will be output in .tif format. Multiple different images are generated for the various statistics produced.
-- Field - an argument containing the name of the field to be targetted. If a custom .cpp demo file is written, this can be an arbitrary value supported by the input cloud and point format. For the demo here, this must be one of the fields defined [here](https://github.com/conormcmahon/dirt_or_leaf/blob/master/include/dirt_or_leaf/point_veg.h). That means the following are supported: intensity, classification, height, roughness, x, y, or z. 
-- Pixel Size - the width and height of each input pixel in the output image, using the units of the input point cloud. 
-
 # Example Images
 
 ## Input Cloud
