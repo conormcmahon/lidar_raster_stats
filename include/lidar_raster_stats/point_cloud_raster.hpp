@@ -131,7 +131,7 @@ bool PointCloudRaster<PointType>::checkRasterInitialization()
 
 template <typename PointType>
 template <typename DataType>
-bool PointCloudRaster<PointType>::checkRasterInitialization(std::vector<std::vector<DataType> >& raster)
+bool PointCloudRaster<PointType>::checkRasterInitialization(std::vector<std::vector<DataType> > const &raster)
 {
     if(raster.size() < 1)
     {
@@ -165,7 +165,7 @@ void PointCloudRaster<PointType>::setEPSG(int EPSG)
 template <typename PointType>
 void PointCloudRaster<PointType>::reprojectCloud(int EPSG_new)
 {  
-    std::cout << "Reprojecting input cloud from EPSG:" << EPSG_ << " to EPSG:" << EPSG_new << std::endl;
+/*    std::cout << "Reprojecting input cloud from EPSG:" << EPSG_ << " to EPSG:" << EPSG_new << std::endl;
     // Set up reprojection from initial to new CRS
     PJ_CONTEXT *C;
     PJ *P;
@@ -188,7 +188,7 @@ void PointCloudRaster<PointType>::reprojectCloud(int EPSG_new)
         cloud_->points[i].y = point_proj.enu.n;
         cloud_->points[i].z = point_proj.enu.u; 
     }
-    EPSG_ = EPSG_new; 
+    EPSG_ = EPSG_new;  */
 }
 
 
@@ -397,12 +397,9 @@ void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_n
 
 template <typename PointType>
 template <typename DataType> 
-void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > image, std::string filename)
+void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > const image, std::string filename, GDALDriver *driver)
 { 
     std::cout << "Asked to save a file to " << filename << std::endl;
-
-    // Set up GDAL
-    GDALAllRegister();
 
     if(!checkRasterInitialization(image))
     {
@@ -416,15 +413,11 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
     unsigned int width = image[0].size();
 
     // Create GDAL driver for file IO
-    const char *pszFormat = "GTiff";
 
-    GDALDriver *poDriver;
     char **papszMetadata;
-    poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
-
-    if( poDriver == NULL )
+    if( driver == NULL )
         exit( 1 );
-    papszMetadata = poDriver->GetMetadata();
+    papszMetadata = driver->GetMetadata();
     if( !CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATE, FALSE ) )
     {
         std::cout << "  Driver " << " does not support Create() method. Returning without saving output cloud.";
@@ -434,7 +427,7 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
     // Create image on disk
     GDALDataset *poDstDS;
     char **papszOptions = NULL;
-    poDstDS = poDriver->Create( filename.c_str(), image.size(), image[0].size(), 1, GDT_Float32,
+    poDstDS = driver->Create( filename.c_str(), image.size(), image[0].size(), 1, GDT_Float32,
                                 papszOptions );
                                 
     // Set up transform
@@ -475,12 +468,9 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
 
 template <typename PointType>
 template <typename DataType> 
-void PointCloudRaster<PointType>::outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename)
+void PointCloudRaster<PointType>::outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename, GDALDriver *driver)
 { 
     std::cout << "Asked to save a file to " << filename << std::endl;
-    
-    // Set up GDAL
-    GDALAllRegister();
 
     if(!checkRasterInitialization(image))
     {
@@ -494,14 +484,10 @@ void PointCloudRaster<PointType>::outputTIFMultiband(std::vector<std::vector<std
     unsigned int width = image[0].size();
     unsigned int num_bands = image[0][0].size();
 
-    // Create GDAL driver for file IO
-    const char *pszFormat = "GTiff";
-    GDALDriver *poDriver;
-    char **papszMetadata;
-    poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
-    if( poDriver == NULL )
+    if( driver == NULL )
         exit( 1 );
-    papszMetadata = poDriver->GetMetadata();
+    char **papszMetadata;
+    papszMetadata = driver->GetMetadata();
     if( !CSLFetchBoolean( papszMetadata, GDAL_DCAP_CREATE, FALSE ) )
     {
         std::cout << "  Driver " << " does not support Create() method. Returning without saving output cloud.";
@@ -511,7 +497,7 @@ void PointCloudRaster<PointType>::outputTIFMultiband(std::vector<std::vector<std
     // Create image on disk
     GDALDataset *poDstDS;
     char **papszOptions = NULL;
-    poDstDS = poDriver->Create( filename.c_str(), image.size(), image[0].size(), num_bands, GDT_Float32,
+    poDstDS = driver->Create( filename.c_str(), image.size(), image[0].size(), num_bands, GDT_Float32,
                                 papszOptions );
     
     // Set up transform

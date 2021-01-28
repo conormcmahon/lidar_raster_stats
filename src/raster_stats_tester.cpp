@@ -71,11 +71,18 @@ int main(int argc, char *argv[])
     }
     rasterizer.generateVegHeightHistogram (field_name, histogram_raster, hist_opts, -9999);
     // Save Rasters to Disk
-    rasterizer.outputTIF(max_raster, output_tif_filename + std::string("_max.tif"));
-    rasterizer.outputTIF(min_raster, output_tif_filename + std::string("_min.tif"));
-    rasterizer.outputTIF(median_raster, output_tif_filename + std::string("_median.tif"));
-    rasterizer.outputTIF(density_raster, output_tif_filename + std::string("_density.tif"));
-    rasterizer.outputTIFMultiband(histogram_raster, output_tif_filename + std::string("_histogram.tif")); 
+    //   Set up GDAL
+    GDALAllRegister();
+    //   Set up GDAL Driver
+    GDALDriver *driver;
+    const char *pszFormat = "GTiff";
+    driver = GetGDALDriverManager()->GetDriverByName(pszFormat);
+    //   Output TIFF Files
+    rasterizer.outputTIF(max_raster, output_tif_filename + std::string("_max.tif"), driver);
+    rasterizer.outputTIF(min_raster, output_tif_filename + std::string("_min.tif"), driver);
+    rasterizer.outputTIF(median_raster, output_tif_filename + std::string("_median.tif"), driver);
+    rasterizer.outputTIF(density_raster, output_tif_filename + std::string("_density.tif"), driver);
+    rasterizer.outputTIFMultiband(histogram_raster, output_tif_filename + std::string("_histogram.tif"), driver); 
 
     return 1;
 }

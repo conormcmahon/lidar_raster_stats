@@ -33,6 +33,9 @@ class PointCloudRaster
 public:
     typedef typename pcl::PointCloud<PointType> PC;
     typedef typename pcl::PointCloud<PointType>::Ptr PCP;
+
+    typedef typename std::vector<std::vector<float> > raster;
+    typedef typename std::vector<std::vector<std::vector<float> > > histogram_raster;
     //typedef typename pcl::search::KdTree<PointType> KD;
     //typedef typename pcl::search::KdTree<PointType>::Ptr KDP;
 
@@ -45,7 +48,7 @@ public:
     bool checkRasterInitialization();
     //   For a real raster 
     template <typename DataType>
-    bool checkRasterInitialization(std::vector<std::vector<DataType> >& raster);
+    bool checkRasterInitialization(std::vector<std::vector<DataType> >const &raster);
     void setEPSG(int EPSG);
 
     // ***** Statistics *****
@@ -56,9 +59,9 @@ public:
     void generateVegHeightHistogram(std::string field_name, std::vector<std::vector<std::vector<float> > >& raster_out, HistogramOptions opt, float default_value=-9999);
 
     template <typename DataType> 
-    void outputTIF(std::vector<std::vector<DataType> > image, std::string filename);
+    void outputTIF(std::vector<std::vector<DataType> > image, std::string filename, GDALDriver *driver);
     template <typename DataType> 
-    void outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename);
+    void outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename, GDALDriver *driver);
 
 private:
     PCP cloud_;
