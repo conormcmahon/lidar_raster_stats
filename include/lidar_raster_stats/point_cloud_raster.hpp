@@ -193,10 +193,11 @@ void PointCloudRaster<PointType>::reprojectCloud(int EPSG_new)
 
 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
+void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, float_raster &raster_out, float default_value)
 {
     // Resize Output Image
-    raster_out.assign(height_, std::vector<float>(width_));
+    raster_out.clear();
+    raster_out.resize(width_, std::vector<float>(height_, 0));
     std::cout << "Generating minimum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
     {
@@ -204,9 +205,9 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std:
         return;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
-    std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
-    for(std::size_t i=0; i<index_raster_.size(); i++)
-        for(std::size_t j=0; j<index_raster_[i].size(); j++)
+    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    for(std::size_t i=0; i<width_; i++)
+        for(std::size_t j=0; j<height_; j++)
         {
             // Skip empty raster pixels
             if(index_raster_[i][j].size() < 1)
@@ -224,10 +225,11 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, std:
     // To DO - hole filling, interpolation, etc. 
 } 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
+void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, float_raster &raster_out, float default_value)
 {
     // Resize Output Image
-    raster_out.assign(height_, std::vector<float>(width_));
+    raster_out.clear();
+    raster_out.resize(width_, std::vector<float>(height_, 0));
     std::cout << "Generating maximum value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
     {
@@ -235,9 +237,9 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std:
         return;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
-    std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
-    for(std::size_t i=0; i<index_raster_.size(); i++)
-        for(std::size_t j=0; j<index_raster_[i].size(); j++)
+    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    for(std::size_t i=0; i<width_; i++)
+        for(std::size_t j=0; j<height_; j++)
         {
             // Skip empty raster pixels
             if(index_raster_[i][j].size() < 1)
@@ -255,44 +257,48 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, std:
     // To DO - hole filling, interpolation, etc. 
 } 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value)
-{
+void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, float_raster &raster_out, float default_value)
+{ 
     // Resize Output Image
-    raster_out.assign(height_, std::vector<float>(width_));
+    raster_out.clear();
+    raster_out.resize(width_, std::vector<float>(height_, 0));
     std::cout << "Generating median value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
     {
         std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
         return;
-    }
+    } 
     // Fill image with data
-    std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
-    for(std::size_t i=0; i<index_raster_.size(); i++)
-        for(std::size_t j=0; j<index_raster_[i].size(); j++)
+    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    for(std::size_t i=0; i<width_; i++)
+        for(std::size_t j=0; j<height_; j++)
         {
             // Skip empty raster pixels
             if(index_raster_[i][j].size() < 1)
                 continue;
             // Build and sort list of values
-            std::vector<float> values;
+            std::vector<float> values(index_raster_[i][j].size(), 0);
             for(std::size_t k=0; k<index_raster_[i][j].size(); k++)
-                values.push_back( getFieldValue(cloud_->points[index_raster_[i][j][k]], field_name) );
+                values[k] = ( getFieldValue(cloud_->points[index_raster_[i][j][k]], field_name) );
             std::sort(values.begin(), values.end());
             // Get median from sorted list            
-            unsigned int median_index = floor(values.size()/2);
-            if(values.size() % 2 == 0) // if an odd number of values in pixel
+            int median_index = floor(values.size()/2);
+            if(values.size() % 2 == 1) // if an odd number of values in pixel, take middle value
                 raster_out[i][j] = values[median_index];
-            else
-                raster_out[i][j] = (values[median_index+1] - values[median_index]) / 2;
+            else // if an even, positive number of values in pixel, need to average two values for median
+            {
+                raster_out[i][j] = (values[median_index] - values[median_index-1]) / 2; 
+            }
             empty_cells[i][j] = false;
         }
-    // To DO - hole filling, interpolation, etc. 
+    // To DO - hole filling, interpolation, etc.  
 } 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<float> >& raster_out)
+void PointCloudRaster<PointType>::generateDensityRaster(float_raster &raster_out)
 {
     // Resize Output Image
-    raster_out.assign(height_, std::vector<float>(width_));
+    raster_out.clear();
+    raster_out.resize(width_, std::vector<float>(height_, 0));
     std::cout << "Generating point density raster for input cloud with size " << cloud_->points.size() << std::endl;
     if(!checkRasterInitialization())
     {
@@ -300,8 +306,8 @@ void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<
         return;
     }
     // Fill image with data
-    std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
-    for(std::size_t i=0; i<index_raster_.size(); i++)
+    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    for(std::size_t i=0; i<width_; i++)
         for(std::size_t j=0; j<index_raster_[i].size(); j++)
         {
             raster_out[i][j] = index_raster_[i][j].size();
@@ -311,7 +317,7 @@ void PointCloudRaster<PointType>::generateDensityRaster(std::vector<std::vector<
 } 
 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_name, std::vector<std::vector<std::vector<float> > >& raster_out, HistogramOptions opt, float default_value)
+void PointCloudRaster<PointType>::generateHeightHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float default_value)
 {
     std::cout << "Generating histogram raster with " << opt.num_bins << " bins for input cloud with size " << cloud_->points.size() << std::endl;
     if(!checkRasterInitialization())
@@ -320,7 +326,8 @@ void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_n
         return;
     }
     // Resize Output Image
-    raster_out.assign(height_, std::vector<std::vector<float> >(width_, std::vector<float>(opt.num_bins+2, 0)));
+    raster_out.clear();
+    raster_out.resize(width_, std::vector<std::vector<float> >(height_, std::vector<float>(opt.num_bins+2, 0)));
     // Debugging based on options
     if(opt.scaled_by_pixel)
         std::cout << "  Histogram will be generated with different minima/maxima bounds for each pixel, depending on the local distribution of values." << std::endl;
@@ -346,10 +353,10 @@ void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_n
         std::cout << "  Histogram will be generated with a single fixed minimum and maximum across all pixels. Min: " << opt.min_value << ";  Max: " << opt.max_value << std::endl;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
-    std::vector<std::vector<bool>> empty_cells(index_raster_.size(), std::vector<bool>(index_raster_[0].size(), true));
+    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
     // Populate output raster with data
-    for(std::size_t i=0; i<index_raster_.size(); i++)
-        for(std::size_t j=0; j<index_raster_[i].size(); j++)
+    for(std::size_t i=0; i<width_; i++)
+        for(std::size_t j=0; j<height_; j++)
         {
             // Skip empty raster pixels
             if(index_raster_[i][j].size() < 1)
@@ -396,8 +403,7 @@ void PointCloudRaster<PointType>::generateVegHeightHistogram(std::string field_n
 
 
 template <typename PointType>
-template <typename DataType> 
-void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > const image, std::string filename, GDALDriver *driver)
+void PointCloudRaster<PointType>::outputTIF(float_raster const &image, std::string filename, GDALDriver *driver)
 { 
     std::cout << "Asked to save a file to " << filename << std::endl;
 
@@ -467,8 +473,7 @@ void PointCloudRaster<PointType>::outputTIF(std::vector<std::vector<DataType> > 
 
 
 template <typename PointType>
-template <typename DataType> 
-void PointCloudRaster<PointType>::outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename, GDALDriver *driver)
+void PointCloudRaster<PointType>::outputTIFMultiband(histogram_raster const &image, std::string filename, GDALDriver *driver)
 { 
     std::cout << "Asked to save a file to " << filename << std::endl;
 

@@ -34,7 +34,7 @@ public:
     typedef typename pcl::PointCloud<PointType> PC;
     typedef typename pcl::PointCloud<PointType>::Ptr PCP;
 
-    typedef typename std::vector<std::vector<float> > raster;
+    typedef typename std::vector<std::vector<float> > float_raster;
     typedef typename std::vector<std::vector<std::vector<float> > > histogram_raster;
     //typedef typename pcl::search::KdTree<PointType> KD;
     //typedef typename pcl::search::KdTree<PointType>::Ptr KDP;
@@ -52,16 +52,14 @@ public:
     void setEPSG(int EPSG);
 
     // ***** Statistics *****
-    void generateMaxRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value=-9999);
-    void generateMinRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value=-9999);
-    void generateMedianRaster(std::string field_name, std::vector<std::vector<float> >& raster_out, float default_value=-9999);
-    void generateDensityRaster(std::vector<std::vector<float> >& raster_out);
-    void generateVegHeightHistogram(std::string field_name, std::vector<std::vector<std::vector<float> > >& raster_out, HistogramOptions opt, float default_value=-9999);
+    void generateMinRaster(std::string field_name, float_raster &raster_out, float default_value=-9999);
+    void generateMaxRaster(std::string field_name, float_raster &raster_out, float default_value=-9999);
+    void generateMedianRaster(std::string field_name, float_raster &raster_out, float default_value=-9999);
+    void generateDensityRaster(float_raster &raster_out);
+    void generateHeightHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float default_value=-9999);
 
-    template <typename DataType> 
-    void outputTIF(std::vector<std::vector<DataType> > image, std::string filename, GDALDriver *driver);
-    template <typename DataType> 
-    void outputTIFMultiband(std::vector<std::vector<std::vector<DataType> > > image, std::string filename, GDALDriver *driver);
+    void outputTIF(float_raster const &image, std::string filename, GDALDriver *driver);
+    void outputTIFMultiband(histogram_raster const &image, std::string filename, GDALDriver *driver);
 
 private:
     PCP cloud_;

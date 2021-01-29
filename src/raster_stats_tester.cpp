@@ -44,11 +44,11 @@ int main(int argc, char *argv[])
 
         //GDALDestroy();
     PointCloudRaster<pcl::PointVeg> rasterizer(cloud, pixel_size, pixel_size, EPSG, EPSG_reproj, Eigen::Vector2f::Zero(), true);  
-    std::vector<std::vector<float> > max_raster;
-    std::vector<std::vector<float> > min_raster;
-    std::vector<std::vector<float> > median_raster;
-    std::vector<std::vector<float> > density_raster;
-    std::vector<std::vector<std::vector<float> > > histogram_raster;
+    PointCloudRaster<pcl::PointVeg>::float_raster max_raster;
+    PointCloudRaster<pcl::PointVeg>::float_raster min_raster;
+    PointCloudRaster<pcl::PointVeg>::float_raster median_raster;
+    PointCloudRaster<pcl::PointVeg>::float_raster density_raster;
+    PointCloudRaster<pcl::PointVeg>::histogram_raster histogram_raster;
     // Generate Rasters
     rasterizer.generateMaxRaster     (field_name, max_raster, -9999);
     rasterizer.generateMinRaster     (field_name, min_raster, -9999);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
         hist_opts.min_max_specified = false;
         hist_opts.scaled_by_pixel = true;
     }
-    rasterizer.generateVegHeightHistogram (field_name, histogram_raster, hist_opts, -9999);
+    rasterizer.generateHeightHistogram (field_name, histogram_raster, hist_opts, -9999);
     // Save Rasters to Disk
     //   Set up GDAL
     GDALAllRegister();
