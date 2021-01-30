@@ -204,7 +204,7 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, floa
         return;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
-    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    std::vector<std::vector<bool>> empty_cells(width_, std::vector<bool>(height_, true));
     for(std::size_t i=0; i<width_; i++)
         for(std::size_t j=0; j<height_; j++)
         {
@@ -236,7 +236,7 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, floa
         return;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
-    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    std::vector<std::vector<bool>> empty_cells(width_, std::vector<bool>(height_, true));
     for(std::size_t i=0; i<width_; i++)
         for(std::size_t j=0; j<height_; j++)
         {
@@ -268,7 +268,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, f
         return;
     } 
     // Fill image with data
-    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    std::vector<std::vector<bool>> empty_cells(width_, std::vector<bool>(height_, true));
     for(std::size_t i=0; i<width_; i++)
         for(std::size_t j=0; j<height_; j++)
         {
@@ -305,7 +305,7 @@ void PointCloudRaster<PointType>::generateDensityRaster(float_raster &raster_out
         return;
     }
     // Fill image with data
-    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    std::vector<std::vector<bool>> empty_cells(width_, std::vector<bool>(height_, true));
     for(std::size_t i=0; i<width_; i++)
         for(std::size_t j=0; j<index_raster_[i].size(); j++)
         {
@@ -352,7 +352,7 @@ void PointCloudRaster<PointType>::generateHeightHistogram(std::string field_name
         std::cout << "  Histogram will be generated with a single fixed minimum and maximum across all pixels. Min: " << opt.min_value << ";  Max: " << opt.max_value << std::endl;
     }
     // Build a 2D matrix of bools the same size as image, with TRUE for filled pixels and FALSE for empty pixels
-    std::vector<std::vector<bool>> empty_cells(height_, std::vector<bool>(width_, true));
+    std::vector<std::vector<bool>> empty_cells(width_, std::vector<bool>(height_, true));
     // Populate output raster with data
     for(std::size_t i=0; i<width_; i++)
         for(std::size_t j=0; j<height_; j++)
