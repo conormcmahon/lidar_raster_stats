@@ -165,30 +165,29 @@ void PointCloudRaster<PointType>::setEPSG(int EPSG)
 template <typename PointType>
 void PointCloudRaster<PointType>::reprojectCloud(int EPSG_new)
 {  
-/*    std::cout << "Reprojecting input cloud from EPSG:" << EPSG_ << " to EPSG:" << EPSG_new << std::endl;
+    std::cout << "Reprojecting input cloud from EPSG:" << EPSG_ << " to EPSG:" << EPSG_new << std::endl;
+
     // Set up reprojection from initial to new CRS
-    PJ_CONTEXT *C;
-    PJ *P;
-    PJ* P_for_GIS;
-    PJ_COORD point_init, point_proj;
-    C = proj_context_create();
-    P = proj_create_crs_to_crs (C,
-                                (std::string("EPSG:") + std::to_string(EPSG_)).c_str(),
-                                (std::string("EPSG:") + std::to_string(EPSG_new)).c_str(), 
-                                NULL);
+    OGRSpatialReference in_SRS;
+    in_SRS.importFromEPSG(EPSG_);
+    OGRSpatialReference out_SRS;
+    out_SRS.importFromEPSG(EPSG_new);
+    OGRCoordinateTransformation *transformer = OGRCreateCoordinateTransformation(&in_SRS, &out_SRS);
+
     for(int i=0; i<cloud_->points.size(); i++)
     {
-        // Generate new point, copying all fields and coordinates 
-        PointType point = cloud_->points[i];
-        // Reproject Point in PROJ
-        point_init = proj_coord(cloud_->points[i].x, cloud_->points[i].y, cloud_->points[i].z, 0);
-        point_proj = proj_trans(P, PJ_FWD, point_init);
+        // Get reprojected XYZ coordinates
+        double x = cloud_->points[i].x;
+        double y = cloud_->points[i].y;
+        double z = cloud_->points[i].z;
+        transformer->Transform(1, &x, &y, &z);
+        
         // Assign new coordinates to PCL point 
-        cloud_->points[i].x = point_proj.enu.e;
-        cloud_->points[i].y = point_proj.enu.n;
-        cloud_->points[i].z = point_proj.enu.u; 
+        cloud_->points[i].x = x;
+        cloud_->points[i].y = y;
+        cloud_->points[i].z = z; 
     }
-    EPSG_ = EPSG_new;  */
+    EPSG_ = EPSG_new;  
 }
 
 

@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.3)
 
 project(lidar_raster_stats)
 include_directories(include "/usr/include")
-#add_definitions(-std=c++11)
 
 # Point Cloud Library (PCL)
 find_package(PCL 1.09 REQUIRED COMPONENTS)
@@ -28,16 +27,11 @@ endif()
 # GDAL
 find_package(GDAL REQUIRED)
 
-# PROJ 
-#find_package(PROJ REQUIRED)
-#include_directories(${PROJ_INCLUDE_DIRS})
-
 add_library(point_cloud_raster src/point_cloud_raster.cpp)
-target_link_libraries(point_cloud_raster ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES})# ${PROJ_LIBRARIES})
-#target_include_directories(point_cloud_raster PUBLIC ../include)
+target_link_libraries(point_cloud_raster ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
 
 add_executable(raster_stats_tester src/raster_stats_tester.cpp)
-target_link_libraries(raster_stats_tester ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES})# ${PROJ_LIBRARIES})
+target_link_libraries(raster_stats_tester ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
 
 
 # Install 

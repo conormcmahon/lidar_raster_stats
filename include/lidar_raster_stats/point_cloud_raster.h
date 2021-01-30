@@ -3,16 +3,12 @@
 #define POINT_CLOUD_RASTER_
 
 #include <pcl/point_types.h>
-//#include <opencv2/core/core.hpp>
-//#include <opencv2/highgui/highgui.hpp>
-
 #include <pcl/io/pcd_io.h>
 
 #include <gdal/gdal_priv.h>
-#include <proj.h>
-#include <limits>
+#include <gdal/ogr_spatialref.h>
 
-//#include <pcl/search/kdtree.h>
+#include <limits>
 
 struct HistogramOptions
 {
