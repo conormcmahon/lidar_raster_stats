@@ -11,7 +11,6 @@ Make sure you have [GDAL](https://gdal.org/) and [PCL](https://pointclouds.org/)
 To download and compile, run:
 
 ``` 
-
 # IF you have not installed GDAL yet:
 sudo apt-get install libgdal-dev
 # IF you have not installed PCL yet:
@@ -33,7 +32,6 @@ cd build
 cmake build ..
 sudo cmake --build . --target install
 cd ../..
-
 ```
 
 
