@@ -1,14 +1,41 @@
 # LiDAR Raster Stats
 
-Library to convert PCL point clouds (e.g. as loaded from .PCD files) of land scenes to raster format. Calculates a set of input statistics over all points within each output raster pixel. Rasters can be generated with user-specified CRS (independent of input cloud CRS), origin, and resolution. Users can also specify which point field is used (e.g. vegetation height, return intensity, z value, etc.). 
+Library to convert LiDAR point clouds (e.g. as loaded from .PCD files) of land scenes to raster format. Calculates a set of input statistics over all points within each output raster pixel. Rasters can be generated with user-specified CRS (independent of input cloud CRS), origin, and resolution. Users can also specify which point field is used (e.g. vegetation height, return intensity, z value, etc.). 
 
 # Usage
 
 Building:
 
-Make sure you have [proj](https://proj.org/), [GDAL](https://gdal.org/), and [PCL](https://pointclouds.org/) installed. To compile the example executable you'll also need the LAS processing library [dirt_or_leaf](https://github.com/conormcmahon/dirt_or_leaf). 
+Make sure you have [GDAL](https://gdal.org/) and [PCL](https://pointclouds.org/) installed. To compile the example executable you'll also need the LAS processing library [dirt_or_leaf](https://github.com/conormcmahon/dirt_or_leaf). 
 
-To run within cloned git repository, following build: 
+To download and compile, run:
+
+``` 
+# IF you have not installed GDAL yet:
+sudo apt-get install libgdal-dev
+# IF you have not installed PCL yet:
+sudo apt-get install libpcl-dev
+# IF you would like to use the example executable raster_stats_testser:
+git clone https://github.com/conormcmahon/dirt_or_leaf.git
+cd dirt_or_leaf
+mkdir build
+cd build
+cmake build ..
+sudo cmake --build . --target install
+cd ../..
+
+# To download and build this library:
+git clone https://github.com/conormcmahon/lidar_raster_stats.git
+cd lidar_raster_stats
+mkdir build
+cd build
+cmake build ..
+sudo cmake --build . --target install
+cd ../..
+```
+
+
+To run within cloned a cloned git repository, following build: 
 
 ```
 raster_stats_tester INPUT_FILENAME OUTPUT_FILENAME FIELD_NAME PIXEL_SIZE HISTOGRAM_MIN HISTOGRAM_MAX HISTOGRAM_BINS EPSG_INPUT EPSG_OUTPUT
