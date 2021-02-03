@@ -32,49 +32,68 @@ public:
 
     typedef typename std::vector<std::vector<float> > float_raster;
     typedef typename std::vector<std::vector<std::vector<float> > > histogram_raster;
-    //typedef typename pcl::search::KdTree<PointType> KD;
-    //typedef typename pcl::search::KdTree<PointType>::Ptr KDP;
 
-    // Take an input PCL PointCloud Ptr, output a 2D raster matrix containing a list of all the points in each cell
-    PointCloudRaster(PCP cloud, float pixel_width, float pixel_height, int EPSG, int EPSG_reproj=0, Eigen::Vector2f origin=Eigen::Vector2f::Zero(), bool debugging=false);
+    // Constructor
+    PointCloudRaster(float pixel_width, float pixel_height, Eigen::Vector2f origin_offset=Eigen::Vector2f::Zero());
     // Destructor (make sure to release all GDAL-associated memory)
     ~PointCloudRaster();
+    // Load Data, optionally reproject, and build raster
+    //    Load cloud from existing PCL object in memory
+    void buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj=0);
+    //    Load cloud from .PCD file 
+    void buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj=0);
     // Verify that a raster has actually been populated
     //   For a gridded set of points
     bool checkRasterInitialization();
     //   For a real raster 
     template <typename DataType>
     bool checkRasterInitialization(std::vector<std::vector<DataType> >const &raster);
-    void setEPSG(int EPSG);
+
+    // Return some Raster Structural Information
+    Eigen::Vector2f getOrigin();
+    Eigen::Vector2i getImageSize();
+    Eigen::Vector2f getPixelSize();
 
     // ***** Statistics *****
-    void generateMinRaster(std::string field_name, float_raster &raster_out, float default_value=-9999);
-    void generateMaxRaster(std::string field_name, float_raster &raster_out, float default_value=-9999);
-    void generateMedianRaster(std::string field_name, float_raster &raster_out, float default_value=-9999);
+    void generateMinRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value=-9999);
+    void generateMaxRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value=-9999);
+    void generateMedianRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value=-9999);
     void generateDensityRaster(float_raster &raster_out);
-    void generateHeightHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float default_value=-9999);
+    void generateHeightHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float scale_factor, float default_value=-9999);
 
     void outputTIF(float_raster const &image, std::string filename, GDALDriver *driver);
     void outputTIFMultiband(histogram_raster const &image, std::string filename, GDALDriver *driver);
 
-private:
+protected:
+    // Point Data 
     PCP cloud_;
-    //KDP tree_;
 
     // 2D output raster containing list of point cloud indices within each pixel
     std::vector<std::vector<std::vector<int> > > index_raster_;
     // Mapping from cloud index to raster indices
     std::vector<std::pair<int, int> > index_map_;
 
+    // Dimensions of one pixel in CRS units
     float pixel_width_; 
     float pixel_height_;
+    // origin_offset is user-specified parameter determining offset of infinite raster grid from {0,0}
+    Eigen::Vector2f origin_offset_;
+    // origin is class-calculated origin of output raster, translated an integer multiple of pixel_width and pixel_height from {0,0} to include all data points
     Eigen::Vector2f origin_;
+    // Height of output image in pixels
     float height_;
+    // Width of output image in pixels
     float width_;
+    // EPSG code for coordinate reference system of input data
     int EPSG_;
 
+    // Build Raster Structure
+    void buildRaster();
+    // Get value at selected field for a given point
     float getFieldValue(PointType point, std::string field_name);
+    // Reproject between two EPSG CRSs 
     void reprojectCloud(int EPSG_new);
+
 };
 
 #endif //POINT_CLOUD_RASTER_

@@ -1,9 +1,9 @@
 
-#include <lidar_raster_stats/raster_stats_tester.h>
+#include <lidar_raster_stats/dem_raster_from_tin.h>
 
 int main(int argc, char *argv[])
 {
-    int min_args = 9; 
+    int min_args = 10;
     if(argc != min_args+1 && argc != min_args+2)
     {
         std::cout << "ERROR: Didn't receive expected number of input parameters. Received " << argc-1 << " parameters, instead of " << min_args << " or " << min_args+1 << ". Required parameters, in order:" << std::endl;
@@ -11,32 +11,33 @@ int main(int argc, char *argv[])
         std::cout << "  OUTPUT_FILENAME - string value containing entire path to output filename, but NOT including filetype (e.g. \"/home/foo/raster_out\")" << std::endl;
         std::cout << "  FIELD_NAME      - name of field from point cloud to use for raster outputs (e.g. \"intensity\", \"height\", \"z\"...)" << std::endl;
         std::cout << "  PIXEL_SIZE      - X/Y pixel dimensions for output raster, in output georeferenced units" << std::endl;
+        std::cout << "  SAMPLE_DENSITY  - density at which to sample TIN within each raster pixel - e.g. a value of 10 will result in 10x10=100 points being equally spaced vertically in each pixel" << std::endl;
         std::cout << "  HISTOGRAM_MIN   - minimum bin value for histogram raster. If this and max are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
         std::cout << "  HISTOGRAM_MAX   - maximum bin value for histogram raster. If this and min are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
         std::cout << "  HISTOGRAM_BINS  - number of bins to be used in histogram" << std::endl;
-        std::cout << "  SCALE_FACTOR    - factor by which to scale all values in FIELD_NAME" << std::endl;
+        std::cout << "  SCALE_FACTOR    - factor by which to scale all values in FIELD_NAME " << std::endl;
         std::cout << "  EPSG_INPUT      - EPSG code with the CRS of the input point cloud dataset" << std::endl;
         std::cout << "  EPSG_OUTPUT     - EPSG code that point cloud data will be reprojected to prior to rasterizing. If none is specified, no reprojection occurs." << std::endl;
         return -1;
     }
     std::string pcd_filename = argv[1];
-    std::string TIN_pcd_filename = argv[1];
     std::string output_tif_filename = argv[2];
     std::string field_name = argv[3];
     float pixel_size = std::atof(argv[4]);
-    float hist_min = std::atof(argv[5]);
-    float hist_max = std::atof(argv[6]);
-    int hist_bins = std::atoi(argv[7]);
-    float scale_factor = std::atof(argv[8]);
-    int EPSG = std::atoi(argv[9]);
+    int sample_density = std::atoi(argv[5]);
+    float hist_min = std::atof(argv[6]);
+    float hist_max = std::atof(argv[7]);
+    int hist_bins = std::atoi(argv[8]);
+    float scale_factor = std::atof(argv[9]);
+    int EPSG = std::atoi(argv[10]);
     // Check whether a reprojection is required
     int EPSG_reproj = 0;
-    if(argc == 10)
-        EPSG_reproj = std::atoi(argv[10]);
+    if(argc == min_args+2)
+        EPSG_reproj = std::atoi(argv[11]);
 
     // Load input cloud
-    pcl::PointCloud<pcl::PointVeg>::Ptr cloud(new pcl::PointCloud<pcl::PointVeg>);
-    if (pcl::io::loadPCDFile<pcl::PointVeg> (pcd_filename, *cloud) == -1) //* load the file
+    pcl::PointCloud<pcl::Point2DGround>::Ptr cloud(new pcl::PointCloud<pcl::Point2DGround>);
+    if (pcl::io::loadPCDFile<pcl::Point2DGround> (pcd_filename, *cloud) == -1) //* load the file
     {
         std::cout << "Couldn't read file " << pcd_filename << std::endl;
         return (-1);
@@ -45,14 +46,14 @@ int main(int argc, char *argv[])
     std::cout << "Read an input cloud with size " << cloud->points.size() << std::endl;
 
     // Initialize Raster Generator and Build Raster Structure
-    PointCloudRaster<pcl::PointVeg> rasterizer(pixel_size, pixel_size, Eigen::Vector2f::Zero()); 
+    TINRaster<pcl::Point2DGround> rasterizer(pixel_size, pixel_size, sample_density, sample_density, Eigen::Vector2f::Zero());  
     rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj);
     // Declare Raster Objects 
-    PointCloudRaster<pcl::PointVeg>::float_raster max_raster;
-    PointCloudRaster<pcl::PointVeg>::float_raster min_raster;
-    PointCloudRaster<pcl::PointVeg>::float_raster median_raster;
-    PointCloudRaster<pcl::PointVeg>::float_raster density_raster;
-    PointCloudRaster<pcl::PointVeg>::histogram_raster histogram_raster;
+    PointCloudRaster<pcl::Point2DGround>::float_raster max_raster;
+    PointCloudRaster<pcl::Point2DGround>::float_raster min_raster;
+    PointCloudRaster<pcl::Point2DGround>::float_raster median_raster;
+    PointCloudRaster<pcl::Point2DGround>::float_raster density_raster;
+    PointCloudRaster<pcl::Point2DGround>::histogram_raster histogram_raster;
     // Generate Rasters
     rasterizer.generateMaxRaster     (field_name, max_raster, scale_factor, -9999);
     rasterizer.generateMinRaster     (field_name, min_raster, scale_factor, -9999);

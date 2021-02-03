@@ -33,6 +33,9 @@ target_link_libraries(point_cloud_raster ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES}
 add_executable(raster_stats_tester src/raster_stats_tester.cpp)
 target_link_libraries(raster_stats_tester ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
 
+add_executable(dem_raster_from_tin src/dem_raster_from_tin.cpp)
+target_link_libraries(dem_raster_from_tin ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
+
 
 # Install 
 install(TARGETS point_cloud_raster
