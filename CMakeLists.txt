@@ -27,18 +27,21 @@ endif()
 # GDAL
 find_package(GDAL REQUIRED)
 
-add_library(point_cloud_raster src/point_cloud_raster.cpp)
-target_link_libraries(point_cloud_raster ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
+add_library(base_raster_classes src/base_raster_classes.cpp)
+target_link_libraries(base_raster_classes ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES})
 
 add_executable(raster_stats_tester src/raster_stats_tester.cpp)
-target_link_libraries(raster_stats_tester ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
+target_link_libraries(raster_stats_tester base_raster_classes ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
 
 add_executable(dem_raster_from_tin src/dem_raster_from_tin.cpp)
-target_link_libraries(dem_raster_from_tin ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
+target_link_libraries(dem_raster_from_tin base_raster_classes ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
+
+add_executable(terrain_and_hydrology_from_tin src/terrain_and_hydrology_from_tin.cpp)
+target_link_libraries(terrain_and_hydrology_from_tin base_raster_classes ${PCL_LIBRARIES} gdal ${CGAL_LIBRARIES} ${PDAL_LIBRARIES})
 
 
 # Install 
-install(TARGETS point_cloud_raster
+install(TARGETS base_raster_classes
         DESTINATION lib)
 install(DIRECTORY include/${PROJECT_NAME}
         DESTINATION include

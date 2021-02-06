@@ -1,27 +1,8 @@
 
+#ifndef POINT_CLOUD_RASTER_HPP_
+#define POINT_CLOUD_RASTER_HPP_
+
 #include <lidar_raster_stats/point_cloud_raster.h>
-
-template <typename PointType>
-float PointCloudRaster<PointType>::getFieldValue(PointType point, std::string field_name)
-{
-    // Create a vector containing all the Field objects, and find the index of the target field
-    std::vector<pcl::PCLPointField> fields;
-    int distance_idx = pcl::getFieldIndex<PointType>(field_name, fields);
-    if (distance_idx == -1)
-    {
-        std::cout << "[Rasterizer] Invalid point field name: " << field_name << std::endl;
-        return -10e8;
-    }
-
-    // Switch from a reference to the point to an index in memory which points to it??
-    const std::uint8_t* pt_data = reinterpret_cast<const std::uint8_t*> (&point);
-    // Get the value in this field for this point
-    float field_value = 0;
-    memcpy (&field_value, pt_data + fields[distance_idx].offset, sizeof (float));
-
-    return field_value;
-}
-
 
 // Takes an input point cloud, generates mappings to a raster space
 //   RASTER_INDICES contains a 2D raster where each element is a vector of all cloud points inside that pixel
@@ -46,7 +27,7 @@ void PointCloudRaster<PointType>::buildRasterStructure(std::string filename, int
         return;
     }
     else 
-    std::cout << "Read an input cloud with size " << cloud_->points.size() << std::endl;
+        std::cout << "Read an input cloud with size " << cloud_->points.size() << std::endl;
 
     // Reproject cloud if necessary
     if(EPSG_reproj != 0)
@@ -252,10 +233,10 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, floa
             // Skip empty raster pixels
             if(index_raster_[i][j].size() < 1)
                 continue;
-            float min = getFieldValue( cloud_->points[index_raster_[i][j][0]], field_name ) * scale_factor;                // initialize to first point value in pixel
+            float min = pcl::getFieldValue<PointType,float>( cloud_->points[index_raster_[i][j][0]], field_name ) * scale_factor;                // initialize to first point value in pixel
             for(std::size_t k=1; k<index_raster_[i][j].size(); k++)
             {
-                float new_value = getFieldValue( cloud_->points[index_raster_[i][j][k]], field_name ) * scale_factor;
+                float new_value = pcl::getFieldValue<PointType,float>( cloud_->points[index_raster_[i][j][k]], field_name ) * scale_factor;
                 if(new_value < min)
                     min = new_value;
             }
@@ -284,10 +265,10 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, floa
             // Skip empty raster pixels
             if(index_raster_[i][j].size() < 1)
                 continue;
-            float max = getFieldValue( cloud_->points[index_raster_[i][j][0]], field_name ) * scale_factor;                // initialize to first point value in pixel
+            float max = pcl::getFieldValue<PointType,float>( cloud_->points[index_raster_[i][j][0]], field_name ) * scale_factor;                // initialize to first point value in pixel
             for(std::size_t k=1; k<index_raster_[i][j].size(); k++)
             {
-                float new_value = getFieldValue( cloud_->points[index_raster_[i][j][k]], field_name ) * scale_factor;
+                float new_value = pcl::getFieldValue<PointType,float>( cloud_->points[index_raster_[i][j][k]], field_name ) * scale_factor;
                 if(new_value > max)
                     max = new_value;
             }
@@ -319,7 +300,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, f
             // Build and sort list of values
             std::vector<float> values(index_raster_[i][j].size(), 0);
             for(std::size_t k=0; k<index_raster_[i][j].size(); k++)
-                values[k] = ( getFieldValue(cloud_->points[index_raster_[i][j][k]], field_name) * scale_factor );
+                values[k] = ( pcl::getFieldValue<PointType,float>(cloud_->points[index_raster_[i][j][k]], field_name) * scale_factor );
             std::sort(values.begin(), values.end());
             // Get median from sorted list            
             int median_index = floor(values.size()/2);
@@ -384,7 +365,7 @@ void PointCloudRaster<PointType>::generateHeightHistogram(std::string field_name
         opt.max_value = -10e10;
         for(int i=0; i<cloud_->points.size(); i++)
         {
-            float value = getFieldValue(cloud_->points[i], field_name) * scale_factor;
+            float value = pcl::getFieldValue<PointType,float>(cloud_->points[i], field_name) * scale_factor;
             if(value < opt.min_value)
                 opt.min_value = value;
             if(value > opt.max_value)
@@ -404,7 +385,7 @@ void PointCloudRaster<PointType>::generateHeightHistogram(std::string field_name
             // Build and sort list of values
             std::vector<float> values;
             for(std::size_t k=0; k<index_raster_[i][j].size(); k++)
-                values.push_back( getFieldValue(cloud_->points[index_raster_[i][j][k]], field_name) * scale_factor );
+                values.push_back( pcl::getFieldValue<PointType,float>(cloud_->points[index_raster_[i][j][k]], field_name) * scale_factor );
             std::sort(values.begin(), values.end());
             // Assign min and max values for this histogram, if they vary by pixel
             if(opt.scaled_by_pixel)
@@ -504,8 +485,8 @@ void PointCloudRaster<PointType>::outputTIF(float_raster const &image, std::stri
     // Populate image with data on disk
     GDALRasterBand *poBand;
     poBand = poDstDS->GetRasterBand(1);
-    poBand->RasterIO( GF_Write, 0, 0, height, width,
-                    abyRaster, height, width, GDT_Float32, 0, 0 ); 
+    CPLErr err = poBand->RasterIO( GF_Write, 0, 0, height, width,
+                                   abyRaster, height, width, GDT_Float32, 0, 0 ); 
     // Close and save file 
     GDALClose( (GDALDatasetH) poDstDS ); 
 }
@@ -573,9 +554,11 @@ void PointCloudRaster<PointType>::outputTIFMultiband(histogram_raster const &ima
         // Populate image with data on disk
         GDALRasterBand *poBand;
         poBand = poDstDS->GetRasterBand(band+1);
-        poBand->RasterIO( GF_Write, 0, 0, height, width,
-                        abyRaster, height, width, GDT_Float32, 0, 0 );
+        CPLErr err = poBand->RasterIO( GF_Write, 0, 0, height, width,
+                                       abyRaster, height, width, GDT_Float32, 0, 0 );
     }
     // Close and save file  
     GDALClose( (GDALDatasetH) poDstDS ); 
 }
+
+#endif //POINT_CLOUD_RASTER_HPP_

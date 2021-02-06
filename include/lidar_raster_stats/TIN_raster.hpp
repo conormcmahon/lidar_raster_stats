@@ -56,18 +56,70 @@ void TINRaster<PointType>::sampleTIN()
                     point.y = this->PointCloudRaster<PointType>::origin_[1] - (j + float(j_sub)/vert_sample_density_) * this->PointCloudRaster<PointType>::pixel_height_; // NOTE vertical dimension in image increases downwards
                     point.z = 0;
 
-                    point.z = TIN_.interpolateTIN(point);
+                    float nodata_value = -9999;
+                    point.z = TIN_.interpolateTIN(point, nodata_value);
+                    // Check whether point was interpolated within the TIN (or lies outside it)
+                    if(point.z == nodata_value)
+                        continue;
                     resampled_cloud->points.push_back(point);
                 }
     resampled_cloud->height = 1;
     resampled_cloud->width = resampled_cloud->points.size();
 
-    pcl::PCDWriter writer;
-    writer.write<PointType>("/mnt/d/serdp/test.pcd", *resampled_cloud, true);
-
     // Generate raster data structure on new cloud
     this->PointCloudRaster<PointType>::buildRasterStructure(resampled_cloud, this->PointCloudRaster<PointType>::EPSG_);
 }
 
+
+template <typename PointType>
+void TINRaster<PointType>::generateTerrainInfo(std::string slope_field, std::string aspect_field)
+{
+    std::cout << "Populating input cloud with slope and aspect information." << std::endl;
+    // Verify that cloud is non-empty
+    if(this->PointCloudRaster<PointType>::cloud_->points.size() < 1)
+    {
+        std::cout << "WARNING: asked to populate slope and aspect for empty point cloud." << std::endl;
+        return;
+    }
+    // Check that requested slope field exists and is of the correct size (Float) or the assignment will fail:
+    if(! pcl::checkFieldType<PointType, float>(slope_field))
+    {
+        std::cout << "Field " << slope_field << " is not a valid field for slope data. Field names are case sensitive, and the field size must be of std::float." << std::endl;
+        return;
+    }
+    // Check that requested aspect field exists and is of the correct size (Float) or the assignment will fail:
+    if(! pcl::checkFieldType<PointType, float>(aspect_field))
+    {
+        std::cout << "Field " << aspect_field << " is not a valid field for aspect data. Field names are case sensitive, and the field size must be of std::float." << std::endl;
+        return;
+    }
+
+    for(int i=0; i<this->PointCloudRaster<PointType>::cloud_->points.size(); i++)
+    {
+        Eigen::Vector2f terrain = TIN_.slopeAtPoint(this->PointCloudRaster<PointType>::cloud_->points[i]);
+        pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], slope_field, terrain[0] );
+        pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], aspect_field, terrain[1] );
+    }
+}
+
+
+// Save resampled point cloud to disk as .PCD file
+template <typename PointType>
+void TINRaster<PointType>::saveResampledCloud(std::string filename, float z_scale, bool binary)
+{
+    if(z_scale != 1)
+        for(int i=0; i<this->PointCloudRaster<PointType>::cloud_->points.size(); i++)
+            this->PointCloudRaster<PointType>::cloud_->points[i].z *= z_scale;
+    pcl::PCDWriter writer;
+    writer.write<PointType>(filename, *(this->PointCloudRaster<PointType>::cloud_), binary);
+}
+
+
+// Smoothing of resampled cloud based on neighbor analysis 
+template <typename PointType>
+void TINRaster<PointType>::smoothCloud(float smooth_factor)
+{
+
+}
 
 #endif //TIN_RASTER_HPP_

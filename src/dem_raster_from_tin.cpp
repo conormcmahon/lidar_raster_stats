@@ -48,6 +48,11 @@ int main(int argc, char *argv[])
     // Initialize Raster Generator and Build Raster Structure
     TINRaster<pcl::Point2DGround> rasterizer(pixel_size, pixel_size, sample_density, sample_density, Eigen::Vector2f::Zero());  
     rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj);
+    rasterizer.generateTerrainInfo();
+    if(field_name.compare("z")==0 || field_name.compare("height")==0)
+        rasterizer.saveResampledCloud(output_tif_filename + ".pcd", scale_factor, true);
+    else
+        rasterizer.saveResampledCloud(output_tif_filename + ".pcd", 1, true);
     // Declare Raster Objects 
     PointCloudRaster<pcl::Point2DGround>::float_raster max_raster;
     PointCloudRaster<pcl::Point2DGround>::float_raster min_raster;

@@ -3,6 +3,7 @@
 #define TIN_RASTER_
 
 #include <dirt_or_leaf/las_tin.hpp>
+#include <lidar_raster_stats/point_cloud_raster.hpp>
 
 template <typename PointType>
 class TINRaster : public PointCloudRaster<PointType>
@@ -18,6 +19,12 @@ public:
     void buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj=0);
     //    Load cloud from .PCD file 
     void buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj=0);
+    // Generate Terrain Information (slope and aspect)
+    void generateTerrainInfo(std::string slope_field="slope", std::string aspect_field="aspect");
+    // Save resampled point cloud 
+    void saveResampledCloud(std::string filename, float z_scale=1, bool binary=true);
+    // Smooth Resampled Cloud
+    void smoothCloud(float smooth_factor);
 
 protected:
     // Data Objects

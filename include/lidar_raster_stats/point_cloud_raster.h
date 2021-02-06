@@ -2,11 +2,10 @@
 #ifndef POINT_CLOUD_RASTER_
 #define POINT_CLOUD_RASTER_
 
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-
 #include <gdal/gdal_priv.h>
 #include <gdal/ogr_spatialref.h>
+
+#include <dirt_or_leaf/runtime_field_selection.hpp>
 
 #include <limits>
 
@@ -87,12 +86,11 @@ protected:
     // EPSG code for coordinate reference system of input data
     int EPSG_;
 
-    // Build Raster Structure
+    // Raster Data Manipulation
+    //   Build Raster Structure
     void buildRaster();
-    // Get value at selected field for a given point
-    float getFieldValue(PointType point, std::string field_name);
-    // Reproject between two EPSG CRSs 
-    void reprojectCloud(int EPSG_new);
+    //   Reproject between two EPSG CRSs 
+    void reprojectCloud(int EPSG_new);   
 
 };
 
