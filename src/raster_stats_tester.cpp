@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-    int min_args = 9; 
+    int min_args = 10; 
     if(argc != min_args+1 && argc != min_args+2)
     {
         std::cout << "ERROR: Didn't receive expected number of input parameters. Received " << argc-1 << " parameters, instead of " << min_args << " or " << min_args+1 << ". Required parameters, in order:" << std::endl;
@@ -14,25 +14,26 @@ int main(int argc, char *argv[])
         std::cout << "  HISTOGRAM_MIN   - minimum bin value for histogram raster. If this and max are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
         std::cout << "  HISTOGRAM_MAX   - maximum bin value for histogram raster. If this and min are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
         std::cout << "  HISTOGRAM_BINS  - number of bins to be used in histogram" << std::endl;
+        std::cout << "  Z_SCALE_FACTOR  - factor by which to scale Z values (e.g. to change units)" << std::endl;
         std::cout << "  SCALE_FACTOR    - factor by which to scale all values in FIELD_NAME" << std::endl;
         std::cout << "  EPSG_INPUT      - EPSG code with the CRS of the input point cloud dataset" << std::endl;
         std::cout << "  EPSG_OUTPUT     - EPSG code that point cloud data will be reprojected to prior to rasterizing. If none is specified, no reprojection occurs." << std::endl;
         return -1;
     }
     std::string pcd_filename = argv[1];
-    std::string TIN_pcd_filename = argv[1];
     std::string output_tif_filename = argv[2];
     std::string field_name = argv[3];
     float pixel_size = std::atof(argv[4]);
     float hist_min = std::atof(argv[5]);
     float hist_max = std::atof(argv[6]);
     int hist_bins = std::atoi(argv[7]);
-    float scale_factor = std::atof(argv[8]);
-    int EPSG = std::atoi(argv[9]);
+    float z_scale_factor = std::atof(argv[8]);
+    float scale_factor = std::atof(argv[9]);
+    int EPSG = std::atoi(argv[10]);
     // Check whether a reprojection is required
     int EPSG_reproj = 0;
     if(argc == 10)
-        EPSG_reproj = std::atoi(argv[10]);
+        EPSG_reproj = std::atoi(argv[11]);
 
     // Load input cloud
     pcl::PointCloud<pcl::PointVeg>::Ptr cloud(new pcl::PointCloud<pcl::PointVeg>);
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
 
     // Initialize Raster Generator and Build Raster Structure
     PointCloudRaster<pcl::PointVeg> rasterizer(pixel_size, pixel_size, Eigen::Vector2f::Zero()); 
-    rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj);
+    rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj, z_scale_factor);
     // Declare Raster Objects 
     PointCloudRaster<pcl::PointVeg>::float_raster max_raster;
     PointCloudRaster<pcl::PointVeg>::float_raster min_raster;
@@ -54,9 +55,9 @@ int main(int argc, char *argv[])
     PointCloudRaster<pcl::PointVeg>::float_raster density_raster;
     PointCloudRaster<pcl::PointVeg>::histogram_raster histogram_raster;
     // Generate Rasters
-    rasterizer.generateMaxRaster     (field_name, max_raster, -9999);
-    rasterizer.generateMinRaster     (field_name, min_raster, -9999);
-    rasterizer.generateMedianRaster  (field_name, median_raster, -9999);
+    rasterizer.generateMaxRaster     (field_name, max_raster, -9999, scale_factor);
+    rasterizer.generateMinRaster     (field_name, min_raster, -9999, scale_factor);
+    rasterizer.generateMedianRaster  (field_name, median_raster, -9999, scale_factor);
     rasterizer.generateDensityRaster (density_raster);
     // Populate Histogram Options and Generate Histogram Raster
     HistogramOptions hist_opts;
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
         hist_opts.min_max_specified = false;
         hist_opts.scaled_by_pixel = true;
     }
-    rasterizer.generateHistogram (field_name, histogram_raster, hist_opts, -9999);
+    rasterizer.generateHistogram (field_name, histogram_raster, hist_opts, -9999, scale_factor);
 
     // Save Rasters to Disk
     //   Set up GDAL
