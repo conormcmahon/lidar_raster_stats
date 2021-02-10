@@ -17,16 +17,16 @@ TINRaster<PointType>::TINRaster(float pixel_width, float pixel_height, int horz_
 // Sample 
 //   Load cloud from filename
 template <typename PointType>
-void TINRaster<PointType>::buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj)
+void TINRaster<PointType>::buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj, float scale_factor)
 {
-    this->PointCloudRaster<PointType>::buildRasterStructure(cloud, EPSG, EPSG_reproj);
+    this->PointCloudRaster<PointType>::buildRasterStructure(cloud, EPSG, EPSG_reproj, scale_factor);
     sampleTIN();
 }
 //    Load cloud from .PCD file 
 template <typename PointType>
-void TINRaster<PointType>::buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj)
+void TINRaster<PointType>::buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj, float scale_factor)
 {
-    this->PointCloudRaster<PointType>::buildRasterStructure(filename, EPSG, EPSG_reproj);
+    this->PointCloudRaster<PointType>::buildRasterStructure(filename, EPSG, EPSG_reproj, scale_factor);
     sampleTIN();
 }
 

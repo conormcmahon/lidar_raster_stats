@@ -17,7 +17,7 @@ PointCloudRaster<PointType>::PointCloudRaster(float pixel_width, float pixel_hei
 }
 
 template <typename PointType>
-void PointCloudRaster<PointType>::buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj)
+void PointCloudRaster<PointType>::buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj, float scale_factor)
 {
     EPSG_ = EPSG;
     // Load input cloud
@@ -29,6 +29,11 @@ void PointCloudRaster<PointType>::buildRasterStructure(std::string filename, int
     else 
         std::cout << "Read an input cloud with size " << cloud_->points.size() << std::endl;
 
+    // Optionally rescale cloud in Z dimension
+    if(scale_factor != 1)
+        for(int i=0; i<cloud_->points.size(); i++)
+            cloud_->points[i].z *= scale_factor;
+
     // Reproject cloud if necessary
     if(EPSG_reproj != 0)
         reprojectCloud(EPSG_reproj);
@@ -37,10 +42,16 @@ void PointCloudRaster<PointType>::buildRasterStructure(std::string filename, int
 }
 
 template <typename PointType>
-void PointCloudRaster<PointType>::buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj)
+void PointCloudRaster<PointType>::buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj, float scale_factor)
 {
     EPSG_ = EPSG;   
     *cloud_ = *cloud;
+
+    // Optionally rescale cloud in Z dimension
+    if(scale_factor != 1)
+        for(int i=0; i<cloud_->points.size(); i++)
+            cloud_->points[i].z *= scale_factor;
+
 
     // Reproject cloud if necessary
     if(EPSG_reproj != 0)

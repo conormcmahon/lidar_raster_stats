@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
         std::cout << "  HISTOGRAM_MIN      - minimum bin value for histogram raster. If this and max are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
         std::cout << "  HISTOGRAM_MAX      - maximum bin value for histogram raster. If this and min are both set to 0, the histogram range will be separately calculated for each pixel." << std::endl;
         std::cout << "  HISTOGRAM_BINS     - number of bins to be used in histogram" << std::endl;
-        std::cout << "  SCALE_FACTOR       - factor by which to scale all values in FIELD_NAME " << std::endl;
+        std::cout << "  SCALE_FACTOR       - factor by which to scale all values in the Z dimension (for when a reprojection doesn't include Z unit changes)" << std::endl;
         std::cout << "  EPSG_INPUT         - EPSG code with the CRS of the input point cloud dataset" << std::endl;
         std::cout << "  EPSG_OUTPUT        - EPSG code that point cloud data will be reprojected to prior to rasterizing. If none is specified, no reprojection occurs." << std::endl;
         return -1;
@@ -49,14 +49,11 @@ int main(int argc, char *argv[])
 
     // Initialize Raster Generator and Build Raster Structure
     TINHydrologicRaster<pcl::Point2DGround, pcl::PointChannel> rasterizer(pixel_size, pixel_size, sample_density, sample_density, Eigen::Vector2f::Zero());  
-    rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj);
+    rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj, scale_factor);
     rasterizer.generateTerrainInfo();
     rasterizer.generateStreamDistances(flowlines_filename);
     rasterizer.writeFlowlinesCloud(output_tif_filename+ + "_flowlines.pcd", true);
-    if(field_name.compare("z")==0 || field_name.compare("height")==0)
-        rasterizer.saveResampledCloud(output_tif_filename + ".pcd", scale_factor, true);
-    else
-        rasterizer.saveResampledCloud(output_tif_filename + ".pcd", 1, true);
+    rasterizer.saveResampledCloud(output_tif_filename + ".pcd", true);
 
     // Declare Raster Objects 
     PointCloudRaster<pcl::Point2DGround>::float_raster max_raster;
@@ -65,9 +62,9 @@ int main(int argc, char *argv[])
     PointCloudRaster<pcl::Point2DGround>::float_raster density_raster;
     PointCloudRaster<pcl::Point2DGround>::histogram_raster histogram_raster;
     // Generate Rasters
-    rasterizer.generateMaxRaster     (field_name, max_raster, scale_factor, -9999);
-    rasterizer.generateMinRaster     (field_name, min_raster, scale_factor, -9999);
-    rasterizer.generateMedianRaster  (field_name, median_raster, scale_factor, -9999);
+    rasterizer.generateMaxRaster     (field_name, max_raster, -9999);
+    rasterizer.generateMinRaster     (field_name, min_raster, -9999);
+    rasterizer.generateMedianRaster  (field_name, median_raster, -9999);
     rasterizer.generateDensityRaster (density_raster);
     // Populate Histogram Options and Generate Histogram Raster
     HistogramOptions hist_opts;

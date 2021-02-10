@@ -16,9 +16,9 @@ public:
 
     // Load Data, optionally reproject, and build raster
     //    Load cloud from existing PCL object in memory
-    void buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj=0);
+    void buildRasterStructure(PCP cloud, int EPSG, int EPSG_reproj=0, float scale_factor=1);
     //    Load cloud from .PCD file 
-    void buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj=0);
+    void buildRasterStructure(std::string filename, int EPSG, int EPSG_reproj=0, float scale_factor=1);
     // Generate Terrain Information (slope and aspect)
     void generateTerrainInfo(std::string slope_field="slope", std::string aspect_field="aspect");
     // Save resampled point cloud 
