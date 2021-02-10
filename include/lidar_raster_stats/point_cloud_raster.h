@@ -54,11 +54,11 @@ public:
     Eigen::Vector2f getPixelSize();
 
     // ***** Statistics *****
-    void generateMinRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value=-9999);
-    void generateMaxRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value=-9999);
-    void generateMedianRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value=-9999);
+    void generateMinRaster(std::string field_name, float_raster &raster_out, float default_value=-9999, float scale_factor=1);
+    void generateMaxRaster(std::string field_name, float_raster &raster_out, float default_value=-9999, float scale_factor=1);
+    void generateMedianRaster(std::string field_name, float_raster &raster_out, float default_value=-9999, float scale_factor=1);
     void generateDensityRaster(float_raster &raster_out);
-    void generateHeightHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float scale_factor, float default_value=-9999);
+    void generateHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float default_value=-9999, float scale_factor=1);
 
     void outputTIF(float_raster const &image, std::string filename, GDALDriver *driver);
     void outputTIFMultiband(histogram_raster const &image, std::string filename, GDALDriver *driver);

@@ -225,7 +225,7 @@ void PointCloudRaster<PointType>::reprojectCloud(int EPSG_new)
 
 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value)
+void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, float_raster &raster_out, float default_value, float scale_factor)
 {
     // Resize Output Image
     raster_out.clear();
@@ -257,7 +257,7 @@ void PointCloudRaster<PointType>::generateMinRaster(std::string field_name, floa
     // To DO - hole filling, interpolation, etc. 
 } 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value)
+void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, float_raster &raster_out, float default_value, float scale_factor)
 {
     // Resize Output Image
     raster_out.clear();
@@ -289,7 +289,7 @@ void PointCloudRaster<PointType>::generateMaxRaster(std::string field_name, floa
     // To DO - hole filling, interpolation, etc. 
 } 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, float_raster &raster_out, float scale_factor, float default_value)
+void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, float_raster &raster_out, float default_value, float scale_factor)
 { 
     // Resize Output Image
     raster_out.clear();
@@ -319,7 +319,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, f
                 raster_out[i][j] = values[median_index];
             else // if an even, positive number of values in pixel, need to average two values for median
             {
-                raster_out[i][j] = (values[median_index] - values[median_index-1]) / 2; 
+                raster_out[i][j] = (values[median_index] + values[median_index-1]) / 2; 
             }
             empty_cells[i][j] = false;
         }
@@ -349,7 +349,7 @@ void PointCloudRaster<PointType>::generateDensityRaster(float_raster &raster_out
 } 
 
 template <typename PointType>
-void PointCloudRaster<PointType>::generateHeightHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float scale_factor, float default_value)
+void PointCloudRaster<PointType>::generateHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float default_value, float scale_factor)
 {
     std::cout << "Generating histogram raster with " << opt.num_bins << " bins for input cloud with size " << cloud_->points.size() << std::endl;
     if(!checkRasterInitialization())

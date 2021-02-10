@@ -8,4 +8,6 @@
 #include <dirt_or_leaf/point_2d_ground.h>
 #include <riparian_hydrology_pcl/point_channel.h>
 
+#include <math.h>
+
 #endif //TERRAIN_AND_HYDROLOGY_FROM_TIN_

@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
     PointCloudRaster<pcl::Point2DGround>::float_raster density_raster;
     PointCloudRaster<pcl::Point2DGround>::histogram_raster histogram_raster;
     // Generate Rasters
-    rasterizer.generateMaxRaster     (field_name, max_raster, scale_factor, -9999);
-    rasterizer.generateMinRaster     (field_name, min_raster, scale_factor, -9999);
-    rasterizer.generateMedianRaster  (field_name, median_raster, scale_factor, -9999);
+    rasterizer.generateMaxRaster     (field_name, max_raster, -9999);
+    rasterizer.generateMinRaster     (field_name, min_raster, -9999);
+    rasterizer.generateMedianRaster  (field_name, median_raster, -9999);
     rasterizer.generateDensityRaster (density_raster);
     // Populate Histogram Options and Generate Histogram Raster
     HistogramOptions hist_opts;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         hist_opts.min_max_specified = false;
         hist_opts.scaled_by_pixel = true;
     }
-    rasterizer.generateHeightHistogram (field_name, histogram_raster, hist_opts, scale_factor, -9999);
+    rasterizer.generateHistogram (field_name, histogram_raster, hist_opts, -9999);
 
     // Save Rasters to Disk
     //   Set up GDAL
