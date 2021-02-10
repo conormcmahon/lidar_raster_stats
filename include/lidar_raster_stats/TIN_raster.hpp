@@ -107,11 +107,13 @@ void TINRaster<PointType>::generateTerrainInfo(std::string slope_field, std::str
 template <typename PointType>
 void TINRaster<PointType>::saveResampledCloud(std::string filename, float z_scale, bool binary)
 {
+    std::cout << "Writing resampled TIN cloud to disk at file " << filename << " and z scale factor " << z_scale << std::endl;
     if(z_scale != 1)
         for(int i=0; i<this->PointCloudRaster<PointType>::cloud_->points.size(); i++)
             this->PointCloudRaster<PointType>::cloud_->points[i].z *= z_scale;
     pcl::PCDWriter writer;
     writer.write<PointType>(filename, *(this->PointCloudRaster<PointType>::cloud_), binary);
+    std::cout << "  File saved with " << this->PointCloudRaster<PointType>::cloud_->points.size() << std::endl; 
 }
 
 

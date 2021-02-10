@@ -3,13 +3,12 @@
 
 int main(int argc, char *argv[])
 {
-    int min_args = 12;
+    int min_args = 11;
     if(argc != min_args+1 && argc != min_args+2)
     {
         std::cout << "ERROR: Didn't receive expected number of input parameters. Received " << argc-1 << " parameters, instead of " << min_args << " or " << min_args+1 << ". Required parameters, in order:" << std::endl;
         std::cout << "  INPUT_FILENAME     - string value containing entire path to input filename, including filetype (e.g. \"/home/foo/input_cloud.pcd\")" << std::endl;
-        std::cout << "  FLOWLINES_FILENAME - string value containing entire path to filename for stream flowlines, in .SHP format" << std::endl;
-        std::cout << "  FLOWLINES_LAYER    - string value containing layer name within Shapefile loaded for flowlines" << std::endl;
+        std::cout << "  FLOWLINES_FILENAME - string value containing entire path to filename for stream flowlines, in .PCD format" << std::endl;
         std::cout << "  OUTPUT_FILENAME    - string value containing entire path to output filename, but NOT including filetype (e.g. \"/home/foo/raster_out\")" << std::endl;
         std::cout << "  FIELD_NAME         - name of field from point cloud to use for raster outputs (e.g. \"intensity\", \"height\", \"z\"...)" << std::endl;
         std::cout << "  PIXEL_SIZE         - X/Y pixel dimensions for output raster, in output georeferenced units" << std::endl;
@@ -24,20 +23,19 @@ int main(int argc, char *argv[])
     }
     std::string pcd_filename = argv[1];
     std::string flowlines_filename = argv[2];
-    std::string flowlines_layer = argv[3];
-    std::string output_tif_filename = argv[4];
-    std::string field_name = argv[5];
-    float pixel_size = std::atof(argv[6]);
-    int sample_density = std::atoi(argv[7]);
-    float hist_min = std::atof(argv[8]);
-    float hist_max = std::atof(argv[9]);
-    int hist_bins = std::atoi(argv[10]);
-    float scale_factor = std::atof(argv[11]);
-    int EPSG = std::atoi(argv[12]);
+    std::string output_tif_filename = argv[3];
+    std::string field_name = argv[4];
+    float pixel_size = std::atof(argv[5]);
+    int sample_density = std::atoi(argv[6]);
+    float hist_min = std::atof(argv[7]);
+    float hist_max = std::atof(argv[8]);
+    int hist_bins = std::atoi(argv[9]);
+    float scale_factor = std::atof(argv[10]);
+    int EPSG = std::atoi(argv[11]);
     // Check whether a reprojection is required
     int EPSG_reproj = 0;
     if(argc == min_args+2)
-        EPSG_reproj = std::atoi(argv[13]);
+        EPSG_reproj = std::atoi(argv[12]);
 
     // Load input cloud
     pcl::PointCloud<pcl::Point2DGround>::Ptr cloud(new pcl::PointCloud<pcl::Point2DGround>);
@@ -53,25 +51,12 @@ int main(int argc, char *argv[])
     TINHydrologicRaster<pcl::Point2DGround, pcl::PointChannel> rasterizer(pixel_size, pixel_size, sample_density, sample_density, Eigen::Vector2f::Zero());  
     rasterizer.buildRasterStructure(cloud, EPSG, EPSG_reproj);
     rasterizer.generateTerrainInfo();
+    rasterizer.generateStreamDistances(flowlines_filename);
+    rasterizer.writeFlowlinesCloud(output_tif_filename+ + "_flowlines.pcd", true);
     if(field_name.compare("z")==0 || field_name.compare("height")==0)
         rasterizer.saveResampledCloud(output_tif_filename + ".pcd", scale_factor, true);
     else
         rasterizer.saveResampledCloud(output_tif_filename + ".pcd", 1, true);
-    // Flowlines Information
-    OGRFlowlinesSettings settings;
-    settings.flowlines_filename_ = flowlines_filename;
-    settings.layer_name_ = flowlines_layer;
-    settings.shp_name_field_ = "GNIS_Nm";
-    settings.shp_order_field_ = "StrmOrd";
-    settings.filter_by_order_ = true;
-    settings.filter_by_name_ = false;
-    settings.channel_order_threshold_ = 3;
-    settings.pcl_order_field_ = "stream_order";
-    settings.linear_point_density_ = 1;
-    settings.EPSG_in_ = EPSG;
-    settings.EPSG_reproj_ = EPSG_reproj;
-    rasterizer.generateStreamDistances(settings);
-    rasterizer.writeFlowlinesCloud(output_tif_filename+ + "_flowlines.pcd", true);
 
     // Declare Raster Objects 
     PointCloudRaster<pcl::Point2DGround>::float_raster max_raster;

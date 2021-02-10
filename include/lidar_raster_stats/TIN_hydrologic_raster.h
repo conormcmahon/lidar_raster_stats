@@ -4,6 +4,7 @@
 
 #include <dirt_or_leaf/las_tin.hpp>
 #include <dirt_or_leaf/las_conversions.hpp>
+#include <dirt_or_leaf/runtime_field_selection.hpp>
 #include <riparian_hydrology_pcl/flowlines_pcl.hpp>
 #include <gdal/ogrsf_frmts.h>
 
@@ -13,6 +14,8 @@ template <typename PointType, typename ChannelTypeFlat>
 class TINHydrologicRaster : public TINRaster<PointType>
 {
 public:
+    typedef typename pcl::PointCloud<ChannelTypeFlat> PC;               // Point Cloud for Channel Point Type
+    typedef typename pcl::PointCloud<ChannelTypeFlat>::Ptr PCP;         // Pointer to Point Cloud for Channel Point Type
     typedef typename pcl::PointCloud<ChannelTypeFlat> CC;               // Point Cloud for Channel Point Type
     typedef typename pcl::PointCloud<ChannelTypeFlat>::Ptr CCP;         // Pointer to Point Cloud for Channel Point Type
     typedef typename pcl::KdTreeFLANN<ChannelTypeFlat> CTree;           // KDTree for Channel Point Type
@@ -26,6 +29,8 @@ public:
 
     // Generate Distances to Stream Flowlines from Each Point in Cloud
     void generateStreamDistances(const OGRFlowlinesSettings &settings, std::string horz_dist_field="dist_from_stream", std::string vert_dist_field="height_over_stream");
+    void generateStreamDistances(std::string flowlines_pcd_filename, std::string horz_dist_field="dist_from_stream", std::string vert_dist_field="height_over_stream");
+    void generateStreamDistances(CCP cloud, std::string horz_dist_field="dist_from_stream", std::string vert_dist_field="height_over_stream");
     // Output Flowlines cloud to disk
     void writeFlowlinesCloud(std::string filename, bool binary=true);
 
@@ -35,7 +40,8 @@ protected:
     CTreeP flowlines_search_tree_;
     PTreeP data_search_tree_;
 
-    void sampleOGRSegmentToCloud(OGRFeature &segment, float linear_density, std::string channel_order_field, std::string channel_name_field);
+    bool checkSettingsValidity(std::string vert_dist_field, std::string horz_dist_field);
+    void generateStreamDistancesInternal(std::string vert_dist_field, std::string horz_dist_field);
 };
 
 #endif //TIN_HYDROLOGIC_RASTER_

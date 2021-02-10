@@ -23,20 +23,86 @@ void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateTerrainInfo(std::s
 template <typename PointType, typename ChannelTypeFlat>
 void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateStreamDistances(const OGRFlowlinesSettings &settings, std::string horz_dist_field, std::string vert_dist_field)
 {
+    checkSettingsValidity(horz_dist_field, vert_dist_field);
+
     flowlines_.loadFromSHP(settings);
+    flowlines_.getSearchTree(flowlines_search_tree_);
+
+    generateStreamDistancesInternal(horz_dist_field, vert_dist_field);
+}
+
+
+template <typename PointType, typename ChannelTypeFlat>
+void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateStreamDistances(std::string flowlines_pcd_filename, std::string horz_dist_field, std::string vert_dist_field)
+{
+    checkSettingsValidity(horz_dist_field, vert_dist_field);
+
+    PTreeP target_tree(new PTree); 
+    target_tree->setInputCloud(this->PointCloudRaster<PointType>::cloud_);
+    PointType point;
+    flowlines_.loadFromPCD(flowlines_pcd_filename, point, this->PointCloudRaster<PointType>::cloud_, target_tree, 2000);
+    flowlines_.getSearchTree(flowlines_search_tree_);
+
+    generateStreamDistancesInternal(horz_dist_field, vert_dist_field);
+}
+
+
+template <typename PointType, typename ChannelTypeFlat>
+void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateStreamDistances(CCP flowlines_cloud, std::string horz_dist_field, std::string vert_dist_field)
+{    
+    checkSettingsValidity(horz_dist_field, vert_dist_field);
+
+    // Verify that flowlines cloud is non-empty
+    if(flowlines_cloud->points.size() < 1)
+    {
+        std::cout << "WARNING: asked to generate stream distances but there are no stream points provided." << std::endl;
+        return;
+    }
+
+    flowlines_.loadFromCloud(flowlines_cloud);
+    flowlines_.getSearchTree(flowlines_search_tree_);
+   
+    generateStreamDistancesInternal(horz_dist_field, vert_dist_field);
+}
+
+template <typename PointType, typename ChannelTypeFlat>
+void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateStreamDistancesInternal(std::string horz_dist_field, std::string vert_dist_field)
+{
     flowlines_.populateHeightFromTIN(this->TINRaster<PointType>::TIN_);
     for(int i=0; i<this->PointCloudRaster<PointType>::cloud_->points.size(); i++)
     {
         Eigen::Vector2f stream_distances = flowlines_.getPointDistance(this->PointCloudRaster<PointType>::cloud_->points[i]);
-        if(pcl::checkFieldType<PointType, float>(horz_dist_field))
-            pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], 
-                                     horz_dist_field, 
-                                     stream_distances[0] );
-        if(pcl::checkFieldType<PointType, float>(vert_dist_field))
-            pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], 
-                                     vert_dist_field, 
-                                     stream_distances[1] );
+        pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], 
+                                    horz_dist_field, 
+                                    float(stream_distances[0]), true );
+        pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], 
+                                    vert_dist_field, 
+                                    float(stream_distances[1]), true );  
     }
+}
+
+template <typename PointType, typename ChannelTypeFlat>
+bool TINHydrologicRaster<PointType, ChannelTypeFlat>::checkSettingsValidity(std::string vert_dist_field, std::string horz_dist_field)
+{  
+    // Verify that target data cloud is non-empty
+    if(this->PointCloudRaster<PointType>::cloud_->points.size() < 1)
+    {
+        std::cout << "WARNING: asked to generate stream distances but the target data cloud is empty." << std::endl;
+        return false;
+    }
+    // Check that requested slope field exists and is of the correct size (Float) or the assignment will fail:
+    if(!pcl::checkFieldType<PointType, float>(vert_dist_field))
+    {
+        std::cout << "Field " << vert_dist_field << " is not a valid field for vertical stream distance data. Field names are case sensitive, and the field size must be of std::float." << std::endl;
+        return false;
+    }
+    // Check that requested aspect field exists and is of the correct size (Float) or the assignment will fail:
+    if(!pcl::checkFieldType<PointType, float>(horz_dist_field))
+    {
+        std::cout << "Field " << horz_dist_field << " is not a valid field for horizontal stream distance data. Field names are case sensitive, and the field size must be of std::float." << std::endl;
+        return false;
+    }
+    return true;
 }
 
 template <typename PointType, typename ChannelTypeFlat>
@@ -46,55 +112,5 @@ void TINHydrologicRaster<PointType, ChannelTypeFlat>::writeFlowlinesCloud(std::s
 }
 
 
-/*
-template <typename PointType, typename ChannelTypeFlat>
-void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateStreamDistances(CCP flowlines_cloud, std::string vert_dist_field, std::string horz_dist_field)
-{    
-    *flowlines_ = *flowlines_cloud;
-    flowlines_search_tree_->setInputCloud(flowlines_);
-
-    std::cout << "Populating input cloud with slope and aspect information." << std::endl;
-    // Verify that target data cloud is non-empty
-    if(this->PointCloudRaster<PointType>::cloud_->points.size() < 1)
-    {
-        std::cout << "WARNING: asked to generate stream distances but the target data cloud is empty." << std::endl;
-        return;
-    }
-    // Verify that flowlinse cloud is non-empty
-    if(flowlines_->points.size() < 1)
-    {
-        std::cout << "WARNING: asked to generate stream distances but there are no stream points provided." << std::endl;
-        return;
-    }
-    // Check that requested slope field exists and is of the correct size (Float) or the assignment will fail:
-    if(!this->PointCloudRaster<PointType>::template pcl::isFieldFloat<PointType, float>(vert_dist_field))
-    {
-        std::cout << "Field " << vert_dist_field << " is not a valid field for vertical stream distance data. Field names are case sensitive, and the field size must be of std::float." << std::endl;
-        return;
-    }
-    // Check that requested aspect field exists and is of the correct size (Float) or the assignment will fail:
-    if(!this->PointCloudRaster<PointType>::template pcl::isFieldFloat<PointType, float>(horz_dist_field))
-    {
-        std::cout << "Field " << horz_dist_field << " is not a valid field for horizontal stream distance data. Field names are case sensitive, and the field size must be of std::float." << std::endl;
-        return;
-    }
-
-    for(int i=0; i<this->PointCloudRaster<PointType>::cloud_->points.size(); i++)
-    {
-        // Get nearest-neighbor flowlines point
-        std::vector<int> nearest_indices;
-        std::vector<float> dists_squared;
-        ChannelTypeFlat point_flat;
-        point_flat = pcl::copyPoint3D<PointType, ChannelTypeFlat>(this->PointCloudRaster<PointType>::cloud_->points[i]);
-        flowlines_search_tree_->nearestKSearch(point_flat, 1, nearest_indices, dists_squared);
-        float vertical_distance = point_flat.z - flowlines_->points[nearest_indices[0]].z;
-        float horizontal_distance = sqrt(dists_squared[0]);
-
-        // Populate cloud with this data
-        pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], vert_dist_field, vertical_distance );
-        pcl::assignValueToField( this->PointCloudRaster<PointType>::cloud_->points[i], horz_dist_field, horizontal_distance );
-    }  
-}
-*/
 
 #endif //TIN_HYRDOLOGIC_RASTER_HPP_
