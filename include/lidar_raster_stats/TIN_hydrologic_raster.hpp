@@ -69,7 +69,6 @@ template <typename PointType, typename ChannelTypeFlat>
 void TINHydrologicRaster<PointType, ChannelTypeFlat>::generateStreamDistancesInternal(std::string horz_dist_field, std::string vert_dist_field)
 {
     std::cout << "Generating stream distances for all points in input cloud." << std::endl;
-    flowlines_.populateHeightFromTIN(this->TINRaster<PointType>::TIN_);
     for(int i=0; i<this->PointCloudRaster<PointType>::cloud_->points.size(); i++)
     {
         Eigen::Vector2f stream_distances = flowlines_.getPointDistance(this->PointCloudRaster<PointType>::cloud_->points[i]);
