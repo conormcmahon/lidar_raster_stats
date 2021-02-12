@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     int EPSG = std::atoi(argv[10]);
     // Check whether a reprojection is required
     int EPSG_reproj = 0;
-    if(argc == 10)
+    if(argc == min_args+2)
         EPSG_reproj = std::atoi(argv[11]);
 
     // Load input cloud
