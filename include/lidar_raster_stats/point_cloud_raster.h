@@ -57,6 +57,7 @@ public:
     void generateMinRaster(std::string field_name, float_raster &raster_out, float default_value=-9999, float scale_factor=1);
     void generateMaxRaster(std::string field_name, float_raster &raster_out, float default_value=-9999, float scale_factor=1);
     void generateMedianRaster(std::string field_name, float_raster &raster_out, float default_value=-9999, float scale_factor=1);
+    void generatePercentileRaster(std::string field_name, float_raster &raster_out, float percentile, float default_value=-9999, float scale_factor=1);
     void generateDensityRaster(float_raster &raster_out);
     void generateHistogram(std::string field_name, histogram_raster &raster_out, HistogramOptions opt, float default_value=-9999, float scale_factor=1);
 

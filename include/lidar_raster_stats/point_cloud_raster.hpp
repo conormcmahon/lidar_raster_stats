@@ -297,7 +297,7 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, f
     std::cout << "Generating median value raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::endl;
     if(!checkRasterInitialization())
     {
-        std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
+        std::cout << "WARNING: Requested to generate median from empty raster; exiting.";
         return;
     } 
     // Fill image with data
@@ -326,6 +326,47 @@ void PointCloudRaster<PointType>::generateMedianRaster(std::string field_name, f
     // To DO - hole filling, interpolation, etc.  
 } 
 template <typename PointType>
+void PointCloudRaster<PointType>::generatePercentileRaster(std::string field_name, float_raster &raster_out, float percentile, float default_value, float scale_factor)
+{ 
+    if(percentile > 1 || percentile < 0)
+    {
+        std::cout << "WARNING: Requested to generate percentile raster, but selected percentile of " << percentile << " is not within expected range of 0.0 to 1.0, and so no raster will be generated." << std::endl;
+        return;
+    }
+    // Resize Output Image
+    raster_out.clear();
+    raster_out.resize(width_, std::vector<float>(height_, 0));
+    std::cout << "Generating " << percentile << "th percentile raster for input cloud with size " << cloud_->points.size() << " using field " << field_name << std::setprecision(8) << std::endl;
+    if(!checkRasterInitialization())
+    {
+        std::cout << "WARNING: Requested to generate percentile from empty raster; exiting.";
+        return;
+    } 
+    // Fill image with data
+    std::vector<std::vector<bool>> empty_cells(width_, std::vector<bool>(height_, true));
+    for(std::size_t i=0; i<width_; i++)
+        for(std::size_t j=0; j<height_; j++)
+        {
+            // Skip empty raster pixels
+            if(index_raster_[i][j].size() < 1)
+                continue;
+            // Build and sort list of values
+            std::vector<float> values(index_raster_[i][j].size(), 0);
+            for(std::size_t k=0; k<index_raster_[i][j].size(); k++)
+                values[k] = ( pcl::getFieldValue<PointType,float>(cloud_->points[index_raster_[i][j][k]], field_name) * scale_factor );
+            std::sort(values.begin(), values.end());
+            // Get target percentile from sorted list:
+            int index = floor(values.size()*percentile);
+            if(percentile == 1)
+                raster_out[i][j] = values[index-1];
+            else
+                raster_out[i][j] = values[index];
+            empty_cells[i][j] = false;
+        }
+    // To DO - hole filling, interpolation, etc.  
+} 
+
+template <typename PointType>
 void PointCloudRaster<PointType>::generateDensityRaster(float_raster &raster_out)
 {
     // Resize Output Image
@@ -334,7 +375,7 @@ void PointCloudRaster<PointType>::generateDensityRaster(float_raster &raster_out
     std::cout << "Generating point density raster for input cloud with size " << cloud_->points.size() << std::endl;
     if(!checkRasterInitialization())
     {
-        std::cout << "WARNING: Requested to generate maximum from empty raster; exiting.";
+        std::cout << "WARNING: Requested to generate density from empty raster; exiting.";
         return;
     }
     // Fill image with data
@@ -354,7 +395,7 @@ void PointCloudRaster<PointType>::generateHistogram(std::string field_name, hist
     std::cout << "Generating histogram raster with " << opt.num_bins << " bins for input cloud with size " << cloud_->points.size() << std::endl;
     if(!checkRasterInitialization())
     {
-        std::cout << "  WARNING: Requested to generate maximum from empty raster; exiting without building raster.";
+        std::cout << "  WARNING: Requested to generate histogram from empty raster; exiting without building raster.";
         return;
     }
     // Resize Output Image
@@ -424,7 +465,7 @@ void PointCloudRaster<PointType>::generateHistogram(std::string field_name, hist
                 hist_pos += 2; // because first two bands are the min/max values
                 raster_out[i][j][hist_pos]++;
             }
-            for(std::size_t bin=2; bin<opt.num_bins; bin++)
+            for(std::size_t bin=2; bin<opt.num_bins+2; bin++)
             {
                 raster_out[i][j][bin] /= values.size();
             }
