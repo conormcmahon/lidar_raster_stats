@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
         return (-1);
     }
     else 
-    std::cout << "Read an input cloud with size " << cloud->points.size() << std::endl;
+    std::cout << "Read an input cloud with size " << cloud->points.size() << " from file " << pcd_filename << std::endl;
 
     // Initialize Raster Generator and Build Raster Structure
     PointCloudRaster<pcl::PointVeg> rasterizer(pixel_size, pixel_size, Eigen::Vector2f::Zero()); 
